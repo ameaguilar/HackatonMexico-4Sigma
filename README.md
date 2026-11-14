@@ -1,5 +1,14 @@
 # CobraVoz · Hackatón México 2026
 
+## V7 — registro de negocio y comprobante personalizado
+- Paso 2 del registro: `businessName` — Nombre del negocio (obligatorio, de 2 a 70 caracteres), distinto del nombre legal del titular bancario.
+- Selector existente `entity`: conserva valores `person` y `business` para la integración, pero muestra **Persona física** y **Persona moral** bajo «Régimen fiscal (tipo de contribuyente)». Si se emiten facturas, habrá que pedir el régimen fiscal específico del SAT en un campo aparte.
+- El nombre del comercio aparece en la vista QR, en el recibo y en el historial de movimientos.
+- Ejemplo en el recibo: `Pagaste $150.00 MXN en Tacos Juanita`. La lectura de voz anuncia `Pagaste 150 pesos mexicanos en Tacos Juanita`.
+- Se toma una copia del nombre al crear cada solicitud de cobro; backend debe persistir ese dato bajo la autorización del comercio, sin confiar en modificaciones del cliente.
+- El botón de datos ficticios rellena «Tacos Juanita» como ejemplo.
+- **Todo sigue siendo demostrativo:** no se confirma ni transfiere dinero por estas pantallas; Pey y webhooks deberán implementarse por backend.
+
 ## V6 — dictado Modelo A (Web Speech API, solo MXN)
 - Voz por turnos usando `SpeechRecognition` / `webkitSpeechRecognition` con `lang = es-MX` si el navegador lo permite.
 - Alternativa escrita con las mismas frases e integración de `SpeechSynthesis` para lectura accesible del total.
