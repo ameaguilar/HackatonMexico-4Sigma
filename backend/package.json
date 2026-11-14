@@ -1,0 +1,26 @@
+{
+  "name": "cobravoz-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "API REST de CobraVoz: cobros CoDi por voz para pequeños comercios",
+  "type": "module",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=22.9"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env src/server.js",
+    "dev": "node --watch --env-file-if-exists=.env src/server.js",
+    "test": "node --test --test-reporter=spec \"test/**/*.test.js\"",
+    "test:integration": "node --env-file-if-exists=.env --test --test-reporter=spec test/integration/supabase.integration.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.119.0",
+    "express": "5.3.0",
+    "express-rate-limit": "8.7.4",
+    "helmet": "8.3.0",
+    "jose": "6.2.17",
+    "pino": "10.4.0",
+    "zod": "4.6.7"
+  }
+}

@@ -13,6 +13,7 @@ Plataforma de cobros CoDi para pequeños comercios: el comerciante dicta la vent
 ## Estructura (rama `backend`)
 
 ```
+backend/              API Node.js + Express (ver backend/README.md)
 docs/
   ARQUITECTURA.md     decisiones, hallazgos del spec de Pey, estados, despliegue
   API.md              contratos REST v1
@@ -25,10 +26,13 @@ scripts/
 pey-openapi.json      spec oficial de la API CoDi de Pey (2026-10-20)
 ```
 
-## Probar la base de datos
+## Probar
 
 ```bash
 scripts/test-db.sh
+```
+```bash
+cd backend && npm ci && npm test
 ```
 
 ## Avance
@@ -36,7 +40,7 @@ scripts/test-db.sh
 - [x] Fase 1 · Auditoría del frontend
 - [x] Fase 2 · Diseño del backend (`docs/`)
 - [x] Fase 3 · Esquema Supabase, RLS y pruebas
-- [ ] Fase 4 · Backend Node.js + Express
+- [x] Fase 4 · Backend Node.js + Express (autenticación, negocios, catálogo, precios, historial)
 - [ ] Fase 5 · Integración Pey CoDi
 - [ ] Fase 6 · Ollama (qwen2.5:7b)
 - [ ] Fase 7 · Conexión del frontend

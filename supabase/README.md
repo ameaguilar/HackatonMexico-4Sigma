@@ -53,3 +53,23 @@ DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres scripts/tes
 ```
 
 Las pruebas corren dentro de una transacción que se revierte, así que no dejan datos.
+
+## Inicio de sesión por SMS (teléfono +52)
+
+El frontend ya envía y verifica códigos SMS con Supabase Auth (`/auth/v1/otp` y `/auth/v1/verify`). Para activarlo:
+
+1. **Proveedor de SMS.** Supabase no envía SMS por sí mismo. Crea una cuenta en Twilio: la versión de prueba (*trial*) trae crédito gratuito, pero solo envía a números que verifiques en Twilio, lo cual basta para el equipo. Anota el *Account SID*, el *Auth Token* y un *Messaging Service SID* o un número remitente.
+2. **Supabase → Authentication → Sign In / Providers → Phone**: habilítalo, elige Twilio y pega esas credenciales. Se guardan en Supabase, no en el repositorio.
+3. **Números de prueba** (en esa misma pantalla, *Test Phone Numbers and OTPs*): por ejemplo `525512345678=123456`. Esos números entran con el código fijo y **no se envía ningún SMS**, ideal para presentaciones.
+4. **Authentication → Rate Limits**: revisa el límite de SMS por hora para evitar abuso y costos.
+5. El código debe ser de **6 dígitos**: es lo que espera el frontend.
+
+> Cada SMS real tiene costo (unos centavos de dólar hacia México; revisa la tarifa vigente de Twilio).
+
+## Prueba de integración del backend
+
+Con las migraciones aplicadas y `backend/.env` completo:
+```bash
+cd backend && npm run test:integration
+```
+Crea usuarios temporales con correo `@cobravoz.test` (requiere el proveedor **Email** habilitado, que viene así por defecto), un negocio y productos. Al terminar, los borra. No crea ventas ni llama a Pey.

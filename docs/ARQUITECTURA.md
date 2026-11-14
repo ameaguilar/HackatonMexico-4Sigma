@@ -1,6 +1,6 @@
 # CobraVoz · Arquitectura y decisiones técnicas
 
-Estado: **Fase 2 (diseño) y Fase 3 (base de datos) completas.** El backend Express es la Fase 4.
+Estado: **Fases 2, 3 y 4 completas** (diseño, base de datos y backend base). Siguiente: Fase 5, integración con Pey.
 
 ## 1. Vista general
 
@@ -15,13 +15,13 @@ Tailscale Funnel  https://<maquina>.<tailnet>.ts.net   (HTTPS gratis, URL fija)
    ▼
 Máquina Kali (servidor de demo)
    ├─ backend Node.js + Express   (Docker, :3000)
-   └─ Ollama + qwen2.5:7b          (nativo, 127.0.0.1:11434, nunca expuesto)
+   └─ Ollama (modelo configurable) (nativo, 127.0.0.1:11434, nunca expuesto)
           │
           ├──► Supabase Cloud (Auth + PostgreSQL con RLS)
           └──► Pey CoDi API  https://api.pey.mx
 ```
 
-La máquina Arch, con el mismo hardware, queda para **desarrollo y respaldo**. Usa la misma configuración Docker y Ollama. Solo una de las dos tiene Funnel activo a la vez.
+**Situación temporal:** la máquina Kali que alojará la demo **no tiene GPU**, así que Ollama correrá en CPU (ver D4). La máquina con GPU NVIDIA de 6 GB queda para desarrollo y para cuando haya un alojamiento con GPU. Ambas usan la misma configuración Docker y Ollama; solo una tiene Funnel activo a la vez.
 
 ## 2. Decisiones
 
@@ -30,7 +30,7 @@ La máquina Arch, con el mismo hardware, queda para **desarrollo y respaldo**. U
 | D1 | **Frontend en Netlify**, con proxy `/api/*` hacia el backend | Ya estaba configurado (`netlify.toml`, `_headers`, sitio de preview). Aplica cabeceras de seguridad y permite el proxy, cosa que GitHub Pages no hace. |
 | D2 | **Backend expuesto con Tailscale Funnel** | No tenemos dominio. Funnel da HTTPS y una URL `*.ts.net` fija gratis, sin abrir puertos del router. La URL fija importa para el proxy de Netlify y para registrar webhooks en Pey. Si compran dominio, se migra a Cloudflare Tunnel cambiando solo la URL del proxy. |
 | D3 | **Supabase Cloud, plan gratuito** | Instalar Supabase localmente son unos 10 contenedores que competirían por los 16 GB de RAM con Ollama. Ojo: el plan gratuito pausa el proyecto tras unos 7 días sin actividad. |
-| D4 | **Ollama nativo** (no en Docker) con `qwen2.5:7b` | El modelo Q4_K_M ocupa unos 4.7 GB y cabe en los 6 GB de VRAM con `num_ctx` 4096. Corriendo nativo nos ahorramos configurar el acceso a la GPU desde un contenedor. Ajustes: `OLLAMA_KEEP_ALIVE=24h`, `OLLAMA_NUM_PARALLEL=1`, `temperature: 0` y `format` con esquema JSON. Respaldo si no cabe: `qwen2.5:3b`. |
+| D4 | **Ollama nativo** (no en Docker) y **modelo configurable** (`OLLAMA_MODEL`) | **Con GPU** (NVIDIA de 6 GB): `qwen2.5:7b`. El Q4_K_M ocupa unos 4.7 GB y cabe en VRAM con `num_ctx` 4096. **Sin GPU** (la Kali actual): en CPU un modelo 7B tardaría previsiblemente decenas de segundos por comando, demasiado para cobrar en vivo. Empezamos con `qwen2.5:3b` (unos 2 GB) y en la fase 6 se mide la latencia real en esa máquina antes de decidir. Ajustes: `OLLAMA_KEEP_ALIVE=24h`, `OLLAMA_NUM_PARALLEL=1`, `temperature: 0`, `format` con esquema JSON y un timeout. Por eso D15 importa aún más: las frases comunes las resuelven las reglas al instante, sin modelo. |
 | D5 | **Importes en centavos (`bigint`)** | Exactitud. La conversión a pesos decimales ocurre solo en la frontera con Pey, que usa `number` en MXN. |
 | D6 | **Escritura financiera solo con `service_role`**, mediante funciones SQL | Los usuarios únicamente leen, filtrados por RLS. `create_sale` y `apply_provider_transaction` son atómicas y vuelven a verificar la membresía del usuario. |
 | D7 | **La máquina de estados vive en la base de datos** (trigger) | Ni un error del backend puede llevar un cobro de CREATED a PAID ni modificar uno ya pagado. |
@@ -43,6 +43,9 @@ La máquina Arch, con el mismo hardware, queda para **desarrollo y respaldo**. U
 | D14 | **Cada partida tiene un tipo**: `producto`, `importe_libre` o `descuento` | El frontend ya genera "Cobro directo", "Importe adicional" y "Descuento". |
 | D15 | **Interpretación de voz en dos pasos** | Primero las reglas de `voice-commands.js`, que ya están probadas, son rápidas y predecibles. Si no entienden la frase, se usa Ollama. El resultado siempre es un **borrador**: los precios salen del catálogo y el usuario confirma antes de cobrar. |
 | D16 | **QR generado en el backend a partir de `qrString`** (pendiente de confirmar en la fase 5) | El spec advierte que `generateImage` vuelve más lenta la respuesta. Además, `demo-qr.js` admite 53 bytes como máximo y no sirve para un QR CoDi. |
+| D17 | **Inicio de sesión por SMS** con Supabase Auth (teléfono +52) y Twilio como proveedor | Es lo que ya implementa el frontend (`supabase-auth.js`). Para pruebas: cuenta trial de Twilio y números de prueba con OTP fijo en Supabase, que no envían SMS. Pasos en `supabase/README.md`. |
+| D18 | **Verificación local del JWT** con las llaves públicas del proyecto (JWKS), con HS256 legado como opción | No hace falta consultar a Supabase en cada petición. Se valida firma, emisor, audiencia `authenticated` y expiración, y se rechazan usuarios anónimos. |
+| D19 | **El backend lee y escribe con el JWT del usuario** (RLS aplica) y usa la secret key solo para funciones restringidas | Si el backend tuviera un error de autorización, RLS seguiría impidiendo leer o escribir datos de otro negocio. |
 
 ## 3. Hallazgos del spec de Pey (`pey-openapi.json`, versión 2026-10-20)
 
@@ -88,7 +91,7 @@ Correspondencia con los estados que ya usa el frontend (`movements.js`): PAID �
 - **Secretos** (solo en el `.env` del backend): `SUPABASE_SECRET_KEY`, `PEY_API_KEY`. Al frontend solo llegan la URL de Supabase y su publishable key.
 - **Ollama** escucha en `127.0.0.1`, sin acceso desde fuera. Su salida se valida con un esquema y nunca decide precios ni ejecuta cobros.
 - **Datos bancarios**: nunca se guarda la CLABE completa ni contraseñas o credenciales bancarias.
-- **Probado** (`scripts/test-db.sh`, 74 aserciones):
+- **Probado** (`scripts/test-db.sh`, 76 aserciones; backend: `npm test`, 41 pruebas):
   - aislamiento entre negocios y por rol;
   - privilegios por columna;
   - tablas que solo escribe el backend;
@@ -100,7 +103,7 @@ Correspondencia con los estados que ya usa el frontend (`movements.js`): PAID �
 ## 6. Pendientes y riesgos abiertos
 
 1. **Documentación de webhooks de Pey**: eventos, firma y reintentos. Mientras no exista, se confirma por consulta (D8).
-2. **Modelo de GPU**: confirmar que es NVIDIA. Con Intel Arc, la instalación de Ollama cambia.
-3. **Inicio de sesión por SMS**: Supabase requiere un proveedor de SMS con costo. Para la demo: números de prueba con OTP fijo, o OTP por correo.
+2. **Ollama en CPU**: medir la latencia de `qwen2.5:3b` en la Kali sin GPU (fase 6). Si es alta, se usa `qwen2.5:1.5b` o se deja la IA solo para lo que las reglas no entiendan.
+3. **Costo de SMS**: cada SMS real con Twilio cuesta unos centavos de dólar. Para la demo, números de prueba con OTP fijo.
 4. **Disponibilidad**: la demo depende de que la máquina Kali esté encendida y conectada.
 5. **Monto por QR**: el spec no fija un máximo para QR (el de push es $1,000,000). Usamos $999,999.99, igual que el frontend.
