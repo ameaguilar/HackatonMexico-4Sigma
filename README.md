@@ -1,94 +1,97 @@
-# CobraVoz · Hackatón México 2026
+# 4Sigma CheckIn · CobraVoz
 
-## V7 — registro de negocio y comprobante personalizado
-- Paso 2 del registro: `businessName` — Nombre del negocio (obligatorio, de 2 a 70 caracteres), distinto del nombre legal del titular bancario.
-- Selector existente `entity`: conserva valores `person` y `business` para la integración, pero muestra **Persona física** y **Persona moral** bajo «Régimen fiscal (tipo de contribuyente)». Si se emiten facturas, habrá que pedir el régimen fiscal específico del SAT en un campo aparte.
-- El nombre del comercio aparece en la vista QR, en el recibo y en el historial de movimientos.
-- Ejemplo en el recibo: `Pagaste $150.00 MXN en Tacos Juanita`. La lectura de voz anuncia `Pagaste 150 pesos mexicanos en Tacos Juanita`.
-- Se toma una copia del nombre al crear cada solicitud de cobro; backend debe persistir ese dato bajo la autorización del comercio, sin confiar en modificaciones del cliente.
-- El botón de datos ficticios rellena «Tacos Juanita» como ejemplo.
-- **Todo sigue siendo demostrativo:** no se confirma ni transfiere dinero por estas pantallas; Pey y webhooks deberán implementarse por backend.
+Aplicación web progresiva (PWA) de demostración para que pequeños comercios preparen y revisen cobros en pesos mexicanos mediante voz o calculadora. CobraVoz es el nombre que utiliza el código y la interfaz del proyecto; 4Sigma CheckIn identifica el proyecto de la hackatón.
 
-## V6 — dictado Modelo A (Web Speech API, solo MXN)
-- Adaptación de voz de `de31e97`: controlador compartido en `frontend/js/voice.js`, mensajes para permisos y errores, cancelación al navegar y lectura de respuestas opcional.
-- Pruebas del micrófono simulado: `node --test tests/voice.test.mjs`.
-- Voz por turnos usando `SpeechRecognition` / `webkitSpeechRecognition` con `lang = es-MX` si el navegador lo permite.
-- Alternativa escrita con las mismas frases e integración de `SpeechSynthesis` para lectura accesible del total.
-- Comandos de ejemplo: `Cobra 150 pesos`, `Dos tacos de 25 pesos y tres aguas de 20 pesos`, `Agrega 25 pesos`, `¿Cuánto llevo?`, `Quita el último producto`, `Cancelar`, `Confirmar`.
-- Solo se permiten **pesos mexicanos (MXN)**. Otras monedas como USD, dólares, euros y pesos extranjeros se rechazan explícitamente, sin conversión.
-- El usuario revisa el total antes de generar el QR. El QR es de prueba, no contiene una instrucción CoDi real.
-- Micrófono limitado por la compatibilidad y permisos del navegador; la calculadora sigue disponible como alternativa.
-- Para probar sin un alta real, entra con el botón de acceso de demostración o abre `/index.html#cobros`.
-- La integración con `developer` conserva el registro, la calculadora y el historial V5.
+> **Estado actual:** la aplicación es una demostración de frontend. Los códigos QR, pagos, confirmaciones y movimientos que muestra no son operaciones bancarias reales. La integración con la API PEY CoDi está planeada, pero no implementada en este repositorio.
 
-## V5 — movimientos (solo interfaz de demostración)
-- Ruta hash de listado: `/#/movimientos`.
-- Ruta hash de detalle: `/#/movimientos/:referencia`.
-- Ejemplos ficticios visibles al abrir el historial por primera vez; dejan de mostrarse cuando se crea el primer cobro de prueba de esa sesión.
-- Resumen de total confirmado, pendientes, búsqueda por referencia o monto, filtros Todos / Confirmados / Pendientes / Sin pago, agrupación por día y vista accesible de detalle con lectura de voz.
-- Estados admitidos por la vista: `confirmed`, `pending`, `expired`, `failed`. Solo `confirmed` se incluye en el total, pero **el cliente nunca debe determinar por sí solo que un pago real está confirmado**.
-- Los movimientos de prueba solo viven en memoria de la sesión; recargar puede borrar esos datos.
+## Propósito e inclusión
 
-### Contrato orientativo para el equipo backend (no implementado)
-- Listado autenticado por negocio: `GET /api/movements?status=...&search=...` con paginación.
-- Detalle de una operación autorizada: `GET /api/movements/:id`.
-- Campos mínimos sugeridos: `id`, `reference`, `amount_mxn`, `currency`, `status`, `created_at`, `confirmed_at`, `method` y `merchant_id`.
-- Estado `confirmed` únicamente tras verificar webhook de Pey, importe, referencia y titularidad. Verificación idempotente en backend; no actualizar dinero confirmado mediante interacción del frontend.
-- Nunca devolver CLABE completa, API keys ni datos bancarios sensibles en listado o detalle.
-- Se requiere autorización por negocio y RLS, si se usa una base multiusuario.
+4Sigma CheckIn busca simplificar la preparación de cobros para personas comerciantes, en particular pequeños negocios que necesitan una experiencia clara y rápida en caja. La persona puede dictar un importe o los productos vendidos, revisar el total y, en la demo, generar un QR ilustrativo. La alternativa de calculadora permite introducir y corregir el importe sin usar voz.
 
-## V4 — caja y comprobante de demostración
-- Calculadora numérica visible, con suma, resta, multiplicación y cálculo de total.
-- La calculadora permite revisar y corregir el total antes de generar el QR. Este codifica únicamente texto de demostración y el importe; **no es un QR CoDi ni permite recibir pagos**.
-- Flujo de demostración: QR preparado → Esperando pago → Simular pago recibido → Comprobante con etiqueta SIMULADO → Historial de sesión.
-- El estado de pago real queda reservado al backend, tras validar webhook de Pey, importe, referencia e idempotencia. No debe ser posible que el cliente decida por sí solo que una operación bancaria fue exitosa.
-- Verificación de humo: `2 × 45 + 3 × 30 = $180.00`.
+La interacción por voz permite describir la operación —por ejemplo, “dos cafés de cuarenta pesos”—, agregar o quitar conceptos, consultar el total y solicitar su revisión. El reconocimiento está limitado a las capacidades y permisos del navegador. La lectura de respuestas puede anunciar importes y detalles de movimientos mediante la síntesis de voz del navegador.
 
-## Rama de trabajo
-`developer` contiene el **frontend de demostración**. `main` permanece sin cambios.
+Estas opciones pueden apoyar a personas con debilidad visual, y la interfaz escrita, las etiquetas accesibles y los avisos visuales ofrecen una alternativa a la voz para personas con debilidad auditiva. La voz no es obligatoria: los campos de texto, botones y calculadora permiten completar el flujo sin micrófono ni audio. La aplicación no afirma tener certificación de accesibilidad ni sustituir tecnologías de apoyo.
 
-### Qué previsualizar
-- `/`: aplicación unificada de registro, acceso y cobros de demostración.
-- `/index.html#cobros`: acceso directo al inicio de cobros, sin completar el registro de prueba.
+## Funcionalidad implementada
 
-### Estructura del frontend
-- `frontend/index.html` contiene la estructura común de la SPA.
-- `frontend/css/bootstrap.min.css` contiene Bootstrap 5.3.9 para la cuadrícula responsive y el modo offline.
-- `frontend/css/styles.css` contiene los estilos propios.
-- `frontend/js/app.js` controla la navegación, validaciones y carga de vistas.
-- `frontend/js/payments.js` contiene interpretación de importes, cálculo y QR ilustrativo, sin llamadas bancarias.
-- `frontend/js/voice-commands.js`, `demo-qr.js` y `movements.js` conservan los comandos Modelo A, el QR de texto y los movimientos de las versiones remotas.
-- `frontend/js/supabase-auth.js` integra SMS y WebOTP, con modo demo cuando no se configura Supabase.
-- `frontend/pages/` contiene seis vistas. Los pasos y estados de una misma tarea comparten plantilla; los formularios SMS, mensajes y elementos repetidos se reutilizan como fragmentos HTML.
-- `frontend/sw.js` precarga esos archivos para la vista previa offline.
+- Registro y acceso de demostración, navegación entre vistas y captura de información de negocio. Los datos bancarios y la verificación de identidad no se envían ni validan en un backend.
+- Acceso opcional a Supabase Auth por SMS cuando se configura el cliente; si no, el modo demo acepta el código fijo `123456`. El código del navegador usa la URL y la clave publicable/anónima de Supabase, que no son secretos de servidor.
+- Dictado en español de México mediante Web Speech API cuando el navegador lo admite, comandos para preparar y modificar un cobro y lectura opcional con SpeechSynthesis. También se puede escribir la descripción.
+- Calculadora para operaciones aritméticas y revisión manual del total antes de continuar.
+- QR de demostración rotulado como no pagable; comprobante e historial simulados en memoria de sesión. No hay solicitud de pago, transferencia, conciliación ni confirmación bancaria real.
+- Vistas responsivas, PWA con recursos estáticos precargados y recursos de accesibilidad como etiquetas, estados y descripciones para lector de pantalla.
 
-| Vista | Contenido y estados |
-| --- | --- |
-| `access.html` | Bienvenida, acceso con celular/SMS y biometría simulada |
-| `registration.html` | Identidad, verificación SMS, datos bancarios, revisión y estado pendiente con acceso rápido |
-| `home.html` | Inicio del comerciante y elección de acción |
-| `charge.html` | Voz o calculadora y confirmación común del importe |
-| `payment.html` | QR ilustrativo pendiente y confirmación de pago simulado |
-| `history.html` | Lista y total de operaciones simuladas de la sesión |
+## Stack y arquitectura reales
 
-La lógica de cobros de V1 y el registro de V3 utilizan ahora el mismo shell, estilos y navegación. El historial y los formularios viven solo en memoria y se limpian al cerrar la sesión de demostración. Sirve `frontend/` por HTTP (por ejemplo, `python -m http.server 8000 --directory frontend`); las plantillas y módulos no se cargan abriendo `index.html` con `file://`.
+El repositorio no contiene `package.json`, framework de frontend ni servidor backend.
 
-**Atención:** Sin configuración de Supabase, el acceso y SMS son simulados con código `123456`. Si se configuran `supabase-url` y `supabase-publishable-key` mediante metadatos, o `globalThis.COBRAVOZ_SUPABASE`, el módulo utiliza Supabase Auth para SMS; se requiere un proveedor SMS habilitado. Los registros bancarios, passkeys y cobros siguen siendo demostrativos. El QR NO permite pagar. Ninguna migración se aplica automáticamente al publicar el frontend.
+| Parte | Tecnología / archivos | Responsabilidad y estado |
+| --- | --- | --- |
+| Interfaz | HTML, CSS y JavaScript nativos en `frontend/` | PWA de una sola página con plantillas HTML y navegación/control de vistas en `frontend/js/app.js`. |
+| Estilos | Bootstrap 5.3.9 local y `frontend/css/styles.css` | Cuadrícula adaptable y estilos propios; Bootstrap está incluido como archivo local. |
+| Voz y cobros | Web Speech API, `voice.js`, `voice-commands.js`, `payments.js` | Dictado, lectura opcional, interpretación de comandos, cálculos y generación de imagen/texto QR demostrativo; no llama a PEY. |
+| Autenticación opcional | `frontend/js/supabase-auth.js` | Solicitudes de autenticación SMS desde el navegador usando Supabase Auth si se configura. No equivale a un backend de pagos. |
+| PWA | `manifest.webmanifest`, `sw.js`, `_headers` | Manifiesto y caché de shell estático. El service worker excluye rutas de API y autenticación conocidas; no existe API de pagos en este proyecto. |
+| Publicación de vista previa | Netlify, `netlify.toml` | Publica `frontend/` como sitio estático, sin comando de compilación. No despliega un backend. |
+| Pruebas existentes | Node.js integrado, `node:test` | Pruebas de voz, comandos y movimientos en `tests/`. No hay scripts npm definidos. |
 
-### Diseño aprobado
-- Identidad México Vivo `#006341`, `#FFFFFF`, `#B32635` y texto `#161A1D`.
-- Barlow, botones grandes, accesibilidad, alto contraste, lectura por voz.
-- La PWA registra únicamente un shell estático para la demo; los módulos de pagos reales nunca deben cachearse ni exponer secretos.
+## PEY CoDi: estado, flujo y requisitos
 
-### Integraciones pendientes del backend
-- Configurar el proveedor OAuth de Google en Supabase Auth y sus credenciales en el entorno del servidor.
-- SMS transaccional y verificación de titularidad +52 real.
-- Comprobación de mayoría de edad e identidad por medios aceptados, cuando correspondan.
-- Passkeys/WebAuthn a través de servidor con sesiones y recuperación segura.
-- Validación de CLABE y alta de cuenta de cobro en Pey con autorización para comercios.
-- Consulta de estado de cuenta bancaria (pendiente/en proceso/activa/error), únicamente activa habilita QR real.
-- API de transacciones, recepción de webhooks Pey validados e idempotencia.
-- Privacidad, consentimiento y manejo protegido de datos bancarios.
+### Lo que hace el código hoy
 
-### Netlify preview
-Sitio: `cobravoz-preview`. Conectar repositorio `ameaguilar/HackatonMexico-4Sigma` en la cuenta de Netlify y seleccionar `developer` como rama del sitio preview. `netlify.toml` publica exclusivamente `frontend/`; no configurar build command.
+El código disponible crea un QR ilustrativo que incluye datos explícitos de demostración. La pantalla indica “QR DEMO · NO PAGABLE”; la simulación no consulta PEY, no procesa pagos y no prueba que un pago se haya recibido. El estado “confirmado” de los datos de ejemplo tampoco acredita una transacción bancaria. `supabase-auth.js` cubre autenticación, no la API de cobros.
+
+### Flujo objetivo descrito en el plan, aún pendiente
+
+`PLAN_IMPLEMENTACION_PEY.md` propone una integración servidor-a-servidor: registrar una cuenta de comercio, consultar su estado y permitir la generación de cobros CoDi solo cuando la cuenta esté activa; crear el QR con el importe y concepto revisados; y reflejar el pago en el historial después de verificar la transacción o una notificación de PEY en el backend. La aplicación actual no ejecuta ninguno de esos pasos. Las rutas PEY que aparecen en ese plan son una propuesta basada en un archivo OpenAPI citado allí, pero `pey-openapi.json` no está presente en este repositorio para verificar el contrato. Confirma el contrato vigente con PEY antes de implementar.
+
+El plan menciona como rutas candidatas de PEY `POST /bank-account`, `GET /bank-account/{id}`, `POST /codi/qr` y consultas de transacciones. No hay cliente, endpoints propios `/api/pey/*`, servidor, funciones edge, webhooks, tablas ni migraciones implementadas. La integración también requiere definir autenticación/autorización del backend, almacenamiento por comercio, validación de notificaciones, idempotencia, conciliación, expiración y tratamiento de errores.
+
+### API keys y configuración segura
+
+La clave privada de PEY debe existir únicamente en el entorno secreto del backend que se implemente y enviarse desde ese servidor a PEY como credencial de autorización, de acuerdo con el contrato oficial. No debe añadirse a `frontend/`, al service worker, al repositorio, a variables expuestas al proceso de compilación del frontend ni a respuestas del navegador. El `netlify.toml` actual publica solamente archivos estáticos; por sí solo no proporciona backend ni protege una clave incorporada al JavaScript.
+
+Todavía no hay nombre de variable de entorno PEY configurado por código porque la integración no existe. `PEY_API_KEY` y `PEY_API_BASE_URL` aparecen como nombres propuestos en `PLAN_IMPLEMENTACION_PEY.md`, no como variables activas. Si se usa Supabase Auth, la configuración pública actual puede suministrarse mediante metadatos `supabase-url` y `supabase-publishable-key`, o `globalThis.COBRAVOZ_SUPABASE`, según `supabase-auth.js`. La clave publicable/anónima no debe confundirse con una clave privada de servidor; protege los datos con políticas y permisos apropiados.
+
+## Requisitos e inicio local
+
+- Un navegador moderno. El dictado depende de que el navegador implemente Web Speech API y permita el micrófono; si no, usa texto o calculadora.
+- Python 3 para servir los archivos estáticos localmente.
+- Node.js para ejecutar las pruebas existentes.
+
+Desde la raíz del repositorio, inicia un servidor HTTP:
+
+```powershell
+python -m http.server 8000 --directory frontend
+```
+
+Abre `http://localhost:8000/`. Para entrar directamente a la vista de cobros de demostración, usa `http://localhost:8000/#cobros`. Sirve el sitio por HTTP; abrir `index.html` mediante `file://` no permite cargar correctamente sus módulos y plantillas.
+
+Sin configuración de Supabase, usa el acceso demo y el código `123456`. Para habilitar SMS real con Supabase, configura en el HTML los metadatos públicos que lee `supabase-auth.js` o `globalThis.COBRAVOZ_SUPABASE`, y habilita un proveedor SMS en Supabase. Esto no activa pagos PEY.
+
+## Pruebas disponibles
+
+No se requiere instalar dependencias npm: el repositorio no define `package.json`. Desde la raíz, ejecuta las pruebas existentes con Node.js:
+
+```powershell
+node --test tests/voice.test.mjs
+node --test tests/voice-commands.test.mjs
+node --test tests/movements.test.mjs
+```
+
+## Despliegue de vista previa
+
+`netlify.toml` configura `frontend/` como directorio publicado y no define un comando de build. Para desplegar, conecta el repositorio al sitio de Netlify y selecciona la rama de vista previa deseada; la configuración del sitio debe conservar `frontend/` como directorio de publicación. Esto publica únicamente la PWA estática. No despliega una API PEY ni hace posible cobrar realmente. No se ha verificado el estado actual de una cuenta o sitio de Netlify.
+
+La PWA puede mostrar el shell previamente guardado sin conexión; una operación real, una vez que exista integración, deberá requerir conexión y confirmación del backend. No guardes secretos en archivos publicados o en el caché del service worker.
+
+## Pendientes para completar PEY
+
+- Obtener y versionar de forma segura la especificación oficial vigente de PEY y confirmar acceso, credenciales, entorno y condiciones de cuenta/comercio.
+- Decidir y desplegar el backend (o funciones serverless/edge), su autenticación, configuración de secretos y límites de solicitudes.
+- Diseñar y aplicar almacenamiento seguro, autorización por comercio, políticas de acceso y retención de datos.
+- Implementar alta y consulta de cuenta, creación de QR CoDi real, consulta/verificación de transacciones y webhook firmado o mecanismo oficial de notificación, con idempotencia y conciliación.
+- Conectar el frontend a ese backend y distinguir estados reales de simulados en recibos e historial.
+- Configurar dominios, variables privadas, CORS y observabilidad en el entorno de despliegue.
+
+Consulta `PLAN_IMPLEMENTACION_PEY.md` para el diseño propuesto. Sus rutas y esquemas son referencias de planificación y deben cotejarse con la documentación oficial antes de usarse en producción.
