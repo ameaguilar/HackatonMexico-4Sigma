@@ -1,1 +1,4 @@
-.netlify/\n.env\n.env.*\nnode_modules/\n
+.netlify/
+.env
+.env.*
+node_modules/
