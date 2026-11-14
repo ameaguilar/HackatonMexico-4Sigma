@@ -2,3 +2,15 @@
 venv/
 .venv/
 
+
+# Secretos y entornos locales
+.env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+
+# Supabase CLI (estado local)
+supabase/.temp/
+supabase/.branches/
