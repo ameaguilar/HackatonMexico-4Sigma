@@ -1,6 +1,6 @@
-<<<<<<< HEAD
-# 4Sigma CheckIn · CobraVoz
-=======
+
+# 4Sigma  · CobraVoz (CheckIn)
+
 ## V8 · Ayuda y documentos legales (frontend)
 - Footer responsive con acceso a manual, 18 FAQs, términos y aviso de privacidad propios, enlaces oficiales a Pey/CoDi.
 - Chatbot de FAQs **local y sin IA externa** en una ventana compacta, teclado y alto contraste. Nunca pide ni almacena credenciales bancarias o códigos OTP.
@@ -9,7 +9,6 @@
 - El servicio de cobros se mantiene separado e intacto. No se despliegan cobros Pey con esta actualización.
 
 # CobraVoz · Hackatón México 2026
->>>>>>> f068bf1107398da01a960fd848947e7345d00e26
 
 Aplicación web progresiva (PWA) de demostración para que pequeños comercios preparen y revisen cobros en pesos mexicanos mediante voz o calculadora. CobraVoz es el nombre que utiliza el código y la interfaz del proyecto; 4Sigma CheckIn identifica el proyecto de la hackatón.
 
