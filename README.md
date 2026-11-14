@@ -1,23 +1,27 @@
-# CobraVoz — Hackatón México 2026
+# CobraVoz · Hackatón México 2026
 
-**Rama de integración:** `developer`. Frontend PWA accesible, diseñado con México Vivo.
+## Rama de trabajo
+`developer` contiene el **frontend de demostración**. `main` permanece sin cambios.
 
-## Organización
-- `frontend/`: interfaz de 3 acciones, calculadora, lectura por voz, modo alto contraste y QR de demostración.
-- Futuras carpetas de backend, integraciones o pruebas **no se publicarán** por el sitio de previsualización.
-- `netlify.toml`: configuración del sitio Netlify `cobravoz-preview`, publica únicamente `frontend/`.
+### Qué previsualizar
+- `/`: CobraVoz V3, registro de identidad y edad, SMS mexicano simulado, correo de contacto y CLABE, estados de validación bancaria y biometría simulada.
+- `/cobros-v1.html`: frontend V1 original con calculadora y experiencia inicial de cobro, preservado para integración.
 
-## Diseño
-- Verde `#006341`, blanco `#FFFFFF`, rojo de acento `#B32635`, tinta `#161A1D`.
-- Tipografía: Atkinson Hyperlegible Next con reserva del sistema.
-- Alternativa México Inclusivo de alto contraste y textos ampliables.
+**Atención:** Estos recorridos no envían SMS, no capturan datos reales en servidor, no autentican usuarios, no crean cuentas bancarias y no realizan cobros. El SMS de demostración usa `123456` y la pantalla QR NO es válida.
 
-## Seguridad y estado del prototipo
-Esta versión **no cobra dinero**. QR y confirmación son ficticios y siempre se identifican como DEMO. Nunca se deberán incluir credenciales bancarias, tokens, claves privadas ni llamadas a Pey en el frontend.
+### Diseño aprobado
+- Identidad México Vivo `#006341`, `#FFFFFF`, `#B32635` y texto `#161A1D`.
+- Atkinson Hyperlegible Next, botones grandes, accesibilidad, alto contraste, lectura por voz.
+- La PWA registra únicamente un shell estático para la demo; los módulos de pagos reales nunca deben cachearse ni exponer secretos.
 
-## Despliegue continuo
-1. En Netlify, abrir el proyecto `cobravoz-preview`.
-2. Vincular GitHub: `ameaguilar/HackatonMexico-4Sigma`.
-3. Elegir `developer` como rama principal del sitio preview; mantener `main` separada.
-4. No escribir comando de build; `netlify.toml` fija el directorio de publicación a `frontend`.
-5. Activar Deploy Previews para pull requests hacia `developer`.
+### Integraciones pendientes del backend
+- SMS transaccional y verificación de titularidad +52 real.
+- Comprobación de mayoría de edad e identidad por medios aceptados, cuando correspondan.
+- Passkeys/WebAuthn a través de servidor con sesiones y recuperación segura.
+- Validación de CLABE y alta de cuenta de cobro en Pey con autorización para comercios.
+- Consulta de estado de cuenta bancaria (pendiente/en proceso/activa/error), únicamente activa habilita QR real.
+- API de transacciones, recepción de webhooks Pey validados e idempotencia.
+- Privacidad, consentimiento y manejo protegido de datos bancarios.
+
+### Netlify preview
+Sitio: `cobravoz-preview`. Conectar repositorio `ameaguilar/HackatonMexico-4Sigma` en la cuenta de Netlify y seleccionar `developer` como rama del sitio preview. `netlify.toml` publica exclusivamente `frontend/`; no configurar build command.

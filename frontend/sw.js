@@ -1,15 +1,6 @@
-/* Shell offline de demostración. Nunca almacenar pagos ni respuestas de API. */
-const CACHE='cobravoz-demo-mexicovivo-v2';
-const ASSETS=['./','./index.html','./manifest.webmanifest','./icons/cobravoz.svg'];
-self.addEventListener('install', event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)));self.skipWaiting();});
-self.addEventListener('activate', event=>{event.waitUntil(Promise.all([caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))),self.clients.claim()]));});
-self.addEventListener('fetch', event=>{
-  const request=event.request;
-  const url=new URL(request.url);
-  if(request.method!=='GET'||url.origin!==self.location.origin||url.pathname.startsWith('/api/'))return;
-  if(request.mode==='navigate'){
-    event.respondWith(fetch(request).then(response=>{if(response.ok){const copy=response.clone();caches.open(CACHE).then(cache=>cache.put(request,copy));}return response;}).catch(()=>caches.match(request).then(res=>res||caches.match('./index.html'))));
-    return;
-  }
-  event.respondWith(caches.match(request).then(hit=>hit||fetch(request)));
-});
+/* CobraVoz V3 demo PWA: solo archivos estáticos, nunca cachear pagos. */
+const CACHE="cobravoz-preview-registro-v3-20261114";
+const ASSETS=["./","./index.html","./cobros-v1.html","./manifest.webmanifest","./icons/cobravoz.svg"];
+self.addEventListener("install",event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)));self.skipWaiting();});
+self.addEventListener("activate",event=>{event.waitUntil(Promise.all([caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))),self.clients.claim()]));});
+self.addEventListener("fetch",event=>{const req=event.request;const u=new URL(req.url);if(req.method!=="GET"||u.origin!==self.location.origin||u.pathname.startsWith("/api/"))return;if(req.mode==="navigate"){event.respondWith(fetch(req).then(resp=>{if(resp.ok){const copy=resp.clone();caches.open(CACHE).then(cache=>cache.put(req,copy));}return resp;}).catch(()=>caches.match(req).then(x=>x||caches.match("./index.html"))));return;}event.respondWith(caches.match(req).then(x=>x||fetch(req)));});
