@@ -10,6 +10,8 @@
 - **Todo sigue siendo demostrativo:** no se confirma ni transfiere dinero por estas pantallas; Pey y webhooks deberán implementarse por backend.
 
 ## V6 — dictado Modelo A (Web Speech API, solo MXN)
+- Adaptación de voz de `de31e97`: controlador compartido en `frontend/js/voice.js`, mensajes para permisos y errores, cancelación al navegar y lectura de respuestas opcional.
+- Pruebas del micrófono simulado: `node --test tests/voice.test.mjs`.
 - Voz por turnos usando `SpeechRecognition` / `webkitSpeechRecognition` con `lang = es-MX` si el navegador lo permite.
 - Alternativa escrita con las mismas frases e integración de `SpeechSynthesis` para lectura accesible del total.
 - Comandos de ejemplo: `Cobra 150 pesos`, `Dos tacos de 25 pesos y tres aguas de 20 pesos`, `Agrega 25 pesos`, `¿Cuánto llevo?`, `Quita el último producto`, `Cancelar`, `Confirmar`.
