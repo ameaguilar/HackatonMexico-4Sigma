@@ -1,0 +1,33 @@
+
+/* Asistente de preguntas frecuentes: adaptado a móvil, tablet y escritorio */
+.cv-legal-footer{border-top:1px solid var(--stroke);padding:16px 0 12px;margin:22px 0 0;color:var(--ink)}
+.cv-legal-heading{font-size:14px;font-weight:800;margin:0 0 8px}
+.cv-legal-links{display:flex;flex-wrap:wrap;gap:4px 12px}
+.cv-legal-links a{display:inline-flex;align-items:center;min-height:42px;font-size:13px;font-weight:750;line-height:1.35;color:var(--green);text-decoration:underline;text-underline-offset:3px}
+.cv-legal-disclaimer{color:var(--muted);font-size:12px;line-height:1.5;margin:10px 0 0}
+.cv-help-dock{--cv-panel-bg:#fff;--cv-panel-ink:#161A1D;--cv-panel-muted:#48534E;--cv-panel-border:#A6C3B1;--cv-panel-subtle:#F0F5F1;--cv-panel-main:#006341;--cv-panel-main-ink:#fff;position:fixed;right:var(--cv-help-right,16px);bottom:max(12px,env(safe-area-inset-bottom));z-index:1050;max-width:calc(100vw - 20px);font-family:"Barlow",system-ui,sans-serif}
+.cv-help-dock.cv-help-contrast{--cv-panel-bg:#002F2A;--cv-panel-ink:#fff;--cv-panel-muted:#E5F1E8;--cv-panel-border:#BBD4C6;--cv-panel-subtle:#12483F;--cv-panel-main:#C9F1D4;--cv-panel-main-ink:#002F2A}
+.cv-help-dock *{box-sizing:border-box}
+.cv-help-fab{display:flex;gap:7px;align-items:center;min-height:50px;padding:10px 15px;margin-left:auto;background:var(--cv-panel-main);color:var(--cv-panel-main-ink);border:2px solid var(--cv-panel-border);border-radius:999px;font-size:15px;font-weight:800;box-shadow:0 5px 20px #0028193b}
+.cv-help-panel{display:flex;flex-direction:column;width:min(338px,calc(100vw - 24px));height:min(382px,calc(100dvh - 103px));min-height:240px;background:var(--cv-panel-bg);color:var(--cv-panel-ink);border:1.5px solid var(--cv-panel-border);border-radius:18px;overflow:hidden;box-shadow:0 14px 46px #00241655}
+.cv-help-panel[hidden],.cv-help-fab[hidden]{display:none!important}
+.cv-help-head{padding:11px 12px;background:var(--cv-panel-main);color:var(--cv-panel-main-ink);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.cv-help-head strong{font-size:16px;font-weight:800;display:block}.cv-help-head small{font-size:12px;display:block;line-height:1.3}
+.cv-help-close{width:42px;height:42px;border:1px solid currentColor;background:transparent;color:inherit;border-radius:11px;font-size:24px}
+.cv-help-log{flex:1;overflow-y:auto;min-height:0;display:flex;flex-direction:column;gap:8px;padding:12px;overscroll-behavior:contain}
+.cv-help-message{max-width:94%;font-size:14px;line-height:1.42;border-radius:13px;padding:9px 10px;overflow-wrap:anywhere}
+.cv-help-message.bot{align-self:flex-start;background:var(--cv-panel-subtle);color:var(--cv-panel-ink);border:1px solid var(--cv-panel-border)}
+.cv-help-message.user{align-self:flex-end;background:var(--cv-panel-main);color:var(--cv-panel-main-ink)}
+.cv-help-quick{display:flex;gap:6px;flex-wrap:wrap;padding:0 10px 9px}
+.cv-help-quick button{border:1px solid var(--cv-panel-border);background:var(--cv-panel-bg);color:var(--cv-panel-ink);border-radius:999px;padding:6px 10px;min-height:39px;font-size:12px;font-weight:800;max-width:100%;text-align:left}
+.cv-help-form{border-top:1px solid var(--cv-panel-border);display:flex;gap:6px;padding:9px}
+.cv-help-form input{min-width:0;flex:1;min-height:44px;border:1.5px solid var(--cv-panel-border);border-radius:11px;background:var(--cv-panel-bg);color:var(--cv-panel-ink);padding:8px;font-size:15px}
+.cv-help-form button{border:0;border-radius:10px;min-height:44px;padding:7px 11px;background:var(--cv-panel-main);color:var(--cv-panel-main-ink);font-size:14px;font-weight:800}
+.cv-help-foot{padding:0 10px 9px;display:flex;justify-content:space-between;gap:6px;align-items:center}
+.cv-help-foot span{font-size:11px;line-height:1.35;color:var(--cv-panel-muted)}
+.cv-help-foot a{color:var(--cv-panel-ink);font-size:12px;font-weight:800;white-space:nowrap}
+.cv-help-dock :is(button,input,a):focus-visible{outline:3px solid #E4AA40;outline-offset:2px}
+.cv-help-large .cv-help-message{font-size:17px}.cv-help-large .cv-help-quick button{font-size:15px}
+@media(max-width:400px){.cv-help-panel{width:min(320px,calc(100vw - 20px));height:min(350px,calc(100dvh - 91px))}.cv-help-fab{min-height:48px}}
+@media(max-height:470px){.cv-help-panel{height:calc(100dvh - 75px);min-height:0}}
+@media(prefers-reduced-motion:reduce){.cv-help-dock *{scroll-behavior:auto!important}}

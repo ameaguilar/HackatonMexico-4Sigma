@@ -1,3 +1,10 @@
+## V8 · Ayuda y documentos legales (frontend)
+- Footer responsive con acceso a manual, 18 FAQs, términos y aviso de privacidad propios, enlaces oficiales a Pey/CoDi.
+- Chatbot de FAQs **local y sin IA externa** en una ventana compacta, teclado y alto contraste. Nunca pide ni almacena credenciales bancarias o códigos OTP.
+- Ruta `/ayuda.html#manual`, `#faq`, `#terms`, `#privacy`. El chat se abre desde cualquier pantalla.
+- **Términos y privacidad son borradores**; no activar aceptación contractual ni producción antes de completar responsable jurídico, domicilio, contacto ARCO, transferencias, periodos y revisión legal.
+- El servicio de cobros se mantiene separado e intacto. No se despliegan cobros Pey con esta actualización.
+
 # CobraVoz · Hackatón México 2026
 
 ## V7 — registro de negocio y comprobante personalizado
