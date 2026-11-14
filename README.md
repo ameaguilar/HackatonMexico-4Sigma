@@ -1,5 +1,21 @@
 # CobraVoz · Hackatón México 2026
 
+## V5 — movimientos (solo interfaz de demostración)
+- Ruta hash de listado: `/#/movimientos`.
+- Ruta hash de detalle: `/#/movimientos/:referencia`.
+- Ejemplos ficticios visibles al abrir el historial por primera vez; dejan de mostrarse cuando se crea el primer cobro de prueba de esa sesión.
+- Resumen de total confirmado, pendientes, búsqueda por referencia o monto, filtros Todos / Confirmados / Pendientes / Sin pago, agrupación por día y vista accesible de detalle con lectura de voz.
+- Estados admitidos por la vista: `confirmed`, `pending`, `expired`, `failed`. Solo `confirmed` se incluye en el total, pero **el cliente nunca debe determinar por sí solo que un pago real está confirmado**.
+- Los movimientos de prueba solo viven en memoria de la sesión; recargar puede borrar esos datos.
+
+### Contrato orientativo para el equipo backend (no implementado)
+- Listado autenticado por negocio: `GET /api/movements?status=...&search=...` con paginación.
+- Detalle de una operación autorizada: `GET /api/movements/:id`.
+- Campos mínimos sugeridos: `id`, `reference`, `amount_mxn`, `currency`, `status`, `created_at`, `confirmed_at`, `method` y `merchant_id`.
+- Estado `confirmed` únicamente tras verificar webhook de Pey, importe, referencia y titularidad. Verificación idempotente en backend; no actualizar dinero confirmado mediante interacción del frontend.
+- Nunca devolver CLABE completa, API keys ni datos bancarios sensibles en listado o detalle.
+- Se requiere autorización por negocio y RLS, si se usa una base multiusuario.
+
 ## V4 — caja y comprobante de demostración
 - Calculadora numérica visible, con suma, resta, multiplicación y cálculo de total.
 - Pulsar `= TOTAL · GENERAR QR` prepara un QR real, que codifica únicamente texto de demostración y el importe; **no es un QR CoDi ni permite recibir pagos**.
