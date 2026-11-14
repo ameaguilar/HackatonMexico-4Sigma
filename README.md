@@ -1,5 +1,12 @@
 # CobraVoz · Hackatón México 2026
 
+## V4 — caja y comprobante de demostración
+- Calculadora numérica visible, con suma, resta, multiplicación y cálculo de total.
+- Pulsar `= TOTAL · GENERAR QR` prepara un QR real, que codifica únicamente texto de demostración y el importe; **no es un QR CoDi ni permite recibir pagos**.
+- Flujo de demostración: QR preparado → Esperando pago → Simular pago recibido → Comprobante con etiqueta SIMULADO → Historial de sesión.
+- El estado de pago real queda reservado al backend, tras validar webhook de Pey, importe, referencia e idempotencia. No debe ser posible que el cliente decida por sí solo que una operación bancaria fue exitosa.
+- Verificación de humo: `2 × 45 + 3 × 30 = $180.00`.
+
 ## Rama de trabajo
 `developer` contiene el **frontend de demostración**. `main` permanece sin cambios.
 
