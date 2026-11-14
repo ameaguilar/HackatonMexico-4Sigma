@@ -1,5 +1,15 @@
 # CobraVoz · Hackatón México 2026
 
+## V6 — dictado Modelo A (Web Speech API, solo MXN)
+- Voz por turnos usando `SpeechRecognition` / `webkitSpeechRecognition` con `lang = es-MX` si el navegador lo permite.
+- Alternativa escrita con las mismas frases e integración de `SpeechSynthesis` para lectura accesible del total.
+- Comandos de ejemplo: `Cobra 150 pesos`, `Dos tacos de 25 pesos y tres aguas de 20 pesos`, `Agrega 25 pesos`, `¿Cuánto llevo?`, `Quita el último producto`, `Cancelar`, `Confirmar`.
+- Solo se permiten **pesos mexicanos (MXN)**. Otras monedas como USD, dólares, euros y pesos extranjeros se rechazan explícitamente, sin conversión.
+- El usuario revisa el total antes de generar el QR. El QR es de prueba, no contiene una instrucción CoDi real.
+- Micrófono limitado por la compatibilidad y permisos del navegador; la calculadora sigue disponible como alternativa.
+- Para probar sin un alta real, en la pantalla de bienvenida: «Probar comandos de voz (sin registro)».
+- La integración con `developer` conserva el registro, la calculadora y el historial V5.
+
 ## V5 — movimientos (solo interfaz de demostración)
 - Ruta hash de listado: `/#/movimientos`.
 - Ruta hash de detalle: `/#/movimientos/:referencia`.
