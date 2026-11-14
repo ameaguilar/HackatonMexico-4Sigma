@@ -1,0 +1,6 @@
+[build]
+  publish = "."
+
+# Prototipo frontend estático sin API ni claves bancarias.
+[context.production]
+  command = ""
