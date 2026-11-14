@@ -64,3 +64,32 @@ textarea.input,.large textarea.input{height:auto;min-height:110px;resize:vertica
 .contrast .key.clear{color:var(--red)}
 .contrast .mic-core.listening{outline-color:var(--focus)}
 @media(max-width:375px){.keypad{gap:6px}.calc-box,.summary-card{padding:15px}.key{min-height:55px}.summary-row{flex-wrap:wrap}.summary-row strong{text-align:left}.large .history-card{flex-wrap:wrap}}
+
+/* Nombre comercial, comprobante y movimientos: misma vista para lista y detalle. */
+.merchant-name{color:var(--green);font-size:20px;font-weight:800;overflow-wrap:anywhere;margin:0 0 16px}
+.demo-qr svg{display:block;width:100%;height:auto}
+.movement-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.movement-summary .summary-card{min-width:0;padding:15px 12px}
+.movement-summary-amount{font-size:clamp(23px,6vw,30px);font-weight:800;line-height:1.2;letter-spacing:-.04em;overflow-wrap:anywhere;font-variant-numeric:tabular-nums;text-align:center;margin:12px 0 0}
+.history-filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:15px 0}
+.history-filter{min-height:48px;border:1px solid var(--stroke);border-radius:12px;background:var(--field);color:var(--ink);font-size:15px;font-weight:800;padding:9px 7px;overflow-wrap:anywhere}
+.history-filter[aria-pressed=true]{background:var(--green);color:var(--white);border-color:var(--green)}
+.movement-record{margin:12px 0}
+.movement-item{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;border:1px solid var(--stroke);border-radius:18px;background:var(--white);color:var(--ink);padding:16px;min-height:96px}
+.movement-main{display:flex;flex:1;min-width:0;flex-direction:column;gap:4px}
+.movement-main strong{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.movement-main small{color:var(--muted);font-size:13px;line-height:1.4;overflow-wrap:anywhere}
+.movement-end{display:flex;flex-direction:column;align-items:flex-end;gap:12px;max-width:44%;flex-shrink:0}
+.movement-badge{display:inline-block;max-width:100%;border:1px solid var(--stroke);border-radius:99px;background:var(--mint);color:var(--green);font-size:12px;font-weight:800;line-height:1.35;text-align:center;padding:6px 9px;overflow-wrap:anywhere}
+.movement-badge[data-status-label="Pendiente"]{color:var(--ink)}
+.movement-badge[data-status-label="Vencido"],.movement-badge[data-status-label="Sin pago"]{color:var(--danger)}
+.movement-arrow{font-size:26px;line-height:1;color:var(--muted)}
+.movement-detail-title{font-size:25px;font-weight:800;margin:24px 0 14px}
+.movement-detail-card .amount{overflow-wrap:anywhere}
+.large .history-filter{font-size:19px;min-height:58px}
+.large .movement-summary-amount{font-size:34px}
+.large .movement-main strong{font-size:28px}
+.large .movement-main small{font-size:17px}
+.large .movement-badge{font-size:16px}
+.contrast .movement-badge[data-status-label="Vencido"],.contrast .movement-badge[data-status-label="Sin pago"]{color:var(--red)}
+@media(max-width:375px){.movement-item{padding:13px;flex-wrap:wrap}.movement-end{max-width:100%;flex-direction:row;align-items:center}.large .movement-summary{grid-template-columns:minmax(0,1fr)}}

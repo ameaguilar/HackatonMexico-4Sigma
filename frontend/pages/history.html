@@ -1,15 +1,54 @@
 <template id="history">
   <section class="screen">
     <button class="back" type="button" data-to="home">← Volver al inicio</button>
-    <h1 class="title">Mis cobros</h1>
-    <p class="subtitle">Operaciones simuladas durante esta sesión.</p>
-    <div class="summary-card"><p class="amount-label">Total simulado</p><p class="amount">{{total}}</p><p class="amount-label">{{count}} {{operationLabel}} de prueba</p></div>
-    <div class="history-list" role="list" aria-label="Operaciones simuladas" {{listHidden}}>{{{items}}}</div>
-    <p class="empty" {{emptyHidden}}>Todavía no tienes cobros de prueba.<br>Haz uno con voz o con calculadora.</p>
-    <button class="primary" type="button" data-to="home">Volver a cobrar →</button>
+    <h1 class="title">Mis movimientos</h1>
+    <p class="subtitle">Consulta cada cobro y revisa su estado.</p>
+    <div class="notice" role="note"><strong>OPERACIONES DE DEMOSTRACIÓN</strong><br>Los ejemplos y movimientos de esta sesión no son transferencias bancarias ni ingresos reales.</div>
+    <div {{listingHidden}}>
+      <div class="movement-summary">
+        <div class="summary-card"><p class="amount-label">Total confirmado · demo</p><p class="movement-summary-amount">{{total}}</p></div>
+        <div class="summary-card"><p class="amount-label">Pendiente · demo</p><p class="movement-summary-amount">{{pendingTotal}}</p></div>
+      </div>
+      <p class="mini-note">{{count}} {{operationLabel}} de prueba. Solo los confirmados se incluyen en el total.</p>
+      <div class="field"><label for="historySearch">Buscar movimiento</label><input class="input" id="historySearch" type="search" autocomplete="off" placeholder="Referencia, negocio o importe" value="{{query}}"></div>
+      <div class="history-filters" role="group" aria-label="Filtrar movimientos por estado">
+        <button class="history-filter" type="button" data-history-filter="all" aria-pressed="{{allPressed}}">Todos</button>
+        <button class="history-filter" type="button" data-history-filter="confirmed" aria-pressed="{{confirmedPressed}}">Confirmados</button>
+        <button class="history-filter" type="button" data-history-filter="pending" aria-pressed="{{pendingPressed}}">Pendientes</button>
+        <button class="history-filter" type="button" data-history-filter="unpaid" aria-pressed="{{unpaidPressed}}">Sin pago</button>
+      </div>
+      <div class="history-list" id="historyList" role="list" aria-label="Movimientos de demostración" aria-live="polite" {{listHidden}}>{{{items}}}</div>
+      <p class="empty" role="status" {{emptyHidden}}>No hay movimientos con este filtro.<br>Prueba otro estado, limpia la búsqueda o prepara un cobro de demostración.</p>
+      <button class="primary" type="button" data-charge="calculator">+ Nuevo cobro</button>
+    </div>
+    <div {{detailHidden}}>
+      {{{detail}}}
+      <button class="secondary" type="button" data-action="readMovement">Escuchar movimiento</button>
+      <button class="primary" type="button" data-action="backToMovements">Ver todos los movimientos</button>
+    </div>
   </section>
 </template>
 
 <template id="historyItem">
-  <div class="history-card" role="listitem"><div><strong>{{amount}}</strong><small>Operación #{{id}} · {{time}}</small></div><span class="history-badge">Simulada</span></div>
+  <div class="movement-record" role="listitem">
+    <button class="movement-item" type="button" data-movement-ref="{{reference}}" aria-label="Ver movimiento {{reference}}, {{amount}}, {{statusLabel}}">
+      <span class="movement-main"><strong>{{amount}}</strong><small>{{businessName}}</small><small>{{createdAt}}</small><small>Ref. {{reference}}</small><small>{{methodLabel}}</small></span>
+      <span class="movement-end"><span class="movement-badge" data-status-label="{{statusLabel}}">{{statusLabel}}</span><span class="movement-arrow" aria-hidden="true">›</span></span>
+    </button>
+  </div>
+</template>
+
+<template id="movementDetail">
+  <h2 class="movement-detail-title">Tu cobro</h2>
+  <div class="summary-card movement-detail-card">
+    <span class="movement-badge" data-status-label="{{statusLabel}}">{{statusLabel}} · DEMO</span>
+    <p class="amount">{{amount}}</p>
+    <div class="summary-row"><span>Negocio</span><strong>{{businessName}}</strong></div>
+    <div class="summary-row"><span>Referencia</span><strong>{{reference}}</strong></div>
+    <div class="summary-row"><span>Creado</span><strong>{{createdAt}}</strong></div>
+    <div class="summary-row"><span>Confirmado</span><strong>{{confirmedAt}}</strong></div>
+    <div class="summary-row"><span>Origen</span><strong>{{methodLabel}}</strong></div>
+    <div class="summary-row"><span>Concepto</span><strong>{{description}}</strong></div>
+  </div>
+  <p class="notice">Este movimiento es ficticio y no constituye un comprobante bancario. En producción, el servidor verificará el pago antes de mostrarlo como confirmado.</p>
 </template>

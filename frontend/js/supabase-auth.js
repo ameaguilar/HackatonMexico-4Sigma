@@ -97,6 +97,7 @@ export function restoreSession(state) {
     state.verified = true;
     if (!state.phone && stored.phone) state.phone = stored.phone;
     if (!state.fullName && stored.fullName) state.fullName = stored.fullName;
+    if (!state.businessName && stored.businessName) state.businessName = stored.businessName;
   }
   return true;
 }
@@ -110,6 +111,7 @@ export function establishSession(state, sessionInfo = {}) {
     userId: sessionInfo.userId || null,
     phone: String(sessionInfo.phone || state?.phone || ''),
     fullName: String(sessionInfo.fullName || state?.fullName || ''),
+    businessName: String(sessionInfo.businessName || state?.businessName || ''),
     accessToken: sessionInfo.accessToken || null,
     refreshToken: sessionInfo.refreshToken || null,
     expiresAt

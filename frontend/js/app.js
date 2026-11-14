@@ -1,5 +1,8 @@
-import { money, interpret, evaluate, updateCalculation, qrPattern } from './payments.js';
+import { money, evaluate, updateCalculation } from './payments.js';
 import { createVoiceController, speakText } from './voice.js?v=voice-1';
+import { processVoiceCommand } from './voice-commands.js';
+import { demoQrSvg } from './demo-qr.js';
+import { movementStatus, filterMovements, movementTotals, exampleMovements } from './movements.js';
 import {
   isProtectedRoute,
   hasActiveSession,
@@ -9,7 +12,8 @@ import {
   requestPhoneOtp,
   verifyPhoneOtpCode,
   startSmsOtpListener,
-  stopSmsOtpListener
+  stopSmsOtpListener,
+  getSupabaseConfig
 } from './supabase-auth.js';
 
 const app = document.getElementById('app');
@@ -21,14 +25,16 @@ const initialState = () => ({
   screen: 'access',
   authMode: 'phone', registrationStep: 'identity', intent: 'login',
   authenticated: false, authSession: null, redirectAfterAuth: null,
-  fullName: '', dob: '', phone: '', email: '', entity: 'person', holder: '', clabe: '', rfc: '',
+  fullName: '', businessName: '', dob: '', phone: '', email: '', entity: 'person', holder: '', clabe: '', rfc: '',
   consent: false, code: '', verified: false, phoneRawProblem: false, showClabe: false,
   error: '', large: false, contrast: false, chargeMode: 'voice', source: 'voice',
-  voiceText: '', listening: false, voiceReadAloud: false, calculation: '0', amount: 0, amountInput: '',
-  description: '', payment: null, history: [], lastId: 0
+  voiceText: '', voiceLastTranscript: '', listening: false, voiceReadAloud: false, calculation: '0', amount: 0, amountInput: '',
+  voiceItems: [], voiceMessage: '', description: '', payment: null, history: [], lastId: 0,
+  historyFilter: 'all', historyQuery: '', selectedMovementRef: '', historyDemoExamples: true
 });
 let data = initialState();
 let loaded = false;
+let lastRoutedHash = '';
 const voiceInput = createVoiceController({
   onState(status) {
     data.listening = ['requesting', 'listening', 'processing'].includes(status);
@@ -36,10 +42,11 @@ const voiceInput = createVoiceController({
   },
   onTranscript(text) {
     if (data.screen !== 'charge' || data.chargeMode !== 'voice') return;
-    data.voiceText = text;
+    data.voiceText = '';
+    data.voiceLastTranscript = text;
     data.error = '';
-    render();
     announce('Escuché: ' + text);
+    handleVoicePhrase(text);
   },
   onError(message) {
     data.listening = false;
@@ -79,7 +86,8 @@ async function loadViews() {
 }
 const errorHtml = () => html(data.error ? renderTemplate('feedback', { message: data.error }) : '');
 const smsHtml = () => html(renderTemplate('smsForm', {
-  maskedPhone: data.phone.slice(0, 2) + '•••' + data.phone.slice(-4), code: data.code, error: errorHtml()
+  maskedPhone: data.phone.slice(0, 2) + '•••' + data.phone.slice(-4), code: data.code, error: errorHtml(),
+  deliveryNotice: getSupabaseConfig().configured ? 'Ingresa el código que recibiste por SMS.' : 'No se envían SMS en esta demo: utiliza 123456 para probar.'
 }));
 function dateLocal() {
   const now = new Date();
@@ -116,6 +124,8 @@ function checkIdentity() {
 }
 function checkBank() {
   if (!data.verified) return fail('Verifica tu celular antes de continuar.');
+  const businessName = data.businessName.trim();
+  if (businessName.length < 2 || businessName.length > 70) return fail('Ingresa el nombre del negocio, de 2 a 70 caracteres.');
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) return fail('Revisa el formato del correo electrónico.');
   if (data.holder.trim().length < 3) return fail('Escribe el nombre legal del titular.');
   if (!clabeValid(data.clabe)) return fail('Revisa los 18 dígitos y el dígito de control de la CLABE, o completa datos de demostración.');
@@ -141,7 +151,7 @@ function fail(message) {
 
 const registrationCopy = {
   identity: ['Identidad', 'Primero, hablemos de ti.', 'Confirma tu edad declarada y tu celular mexicano.'],
-  code: ['Verificación', 'Confirma tu celular.', 'Usa el código de demostración para continuar.'],
+  code: ['Verificación', 'Confirma tu celular.', 'Escribe el código de seis dígitos para continuar.'],
   bank: ['Cuenta CoDi', '¿Dónde recibirás tus pagos?', 'Agrega los datos de tu cuenta bancaria mexicana.'],
   review: ['Revisión', 'Revisa tu cuenta.', 'Confirma los datos antes de preparar la solicitud de prueba.'],
   ready: ['Preparado', 'Tu registro está preparado.', 'Explora la demo y configura tu acceso rápido.']
@@ -149,16 +159,17 @@ const registrationCopy = {
 const screens = {
   access: () => renderTemplate('access', {
     phone: data.phone, phoneHidden: hiddenUnless(data.authMode === 'phone'),
+    accessNotice: getSupabaseConfig().configured ? 'Acceso mediante SMS. Los botones de rostro, huella o PIN son de demostración.' : 'Acceso de demostración. No se envían SMS ni se registra tu biometría.',
     error: data.authMode === 'phone' ? errorHtml() : html(''), sms: data.authMode === 'code' ? smsHtml() : html('')
   }),
   registration: () => {
     const stage = data.registrationStep, [stepLabel, title, subtitle] = registrationCopy[stage];
     return renderTemplate('registration', {
-      stepLabel, title, subtitle, fullName: data.fullName, today: dateLocal(), dob: data.dob, phone: data.phone,
+      stepLabel, title, subtitle, fullName: data.fullName, businessName: data.businessName, today: dateLocal(), dob: data.dob, phone: data.phone,
       consentChecked: data.consent ? 'checked' : '', email: data.email, holder: data.holder,
       clabe: data.clabe, clabeLast: data.clabe.slice(-4), clabeType: data.showClabe ? 'text' : 'password',
       clabeLabel: data.showClabe ? 'Ocultar' : 'Mostrar', rfc: data.rfc, isPerson: data.entity === 'person',
-      isBusiness: data.entity === 'business', entityLabel: data.entity === 'person' ? 'Persona' : 'Empresa',
+      isBusiness: data.entity === 'business', entityLabel: data.entity === 'person' ? 'Persona física' : 'Persona moral',
       identityHidden: hiddenUnless(stage === 'identity'), bankHidden: hiddenUnless(stage === 'bank'),
       reviewHidden: hiddenUnless(stage === 'review'), readyHidden: hiddenUnless(stage === 'ready'),
       rfcHidden: hiddenUnless(data.entity === 'business'), sms: stage === 'code' ? smsHtml() : html(''),
@@ -166,7 +177,7 @@ const screens = {
       reviewError: stage === 'review' ? errorHtml() : html('')
     });
   },
-  home: () => renderTemplate('home', { name: data.fullName.trim().split(/\s+/)[0] || 'bienvenido' }),
+  home: () => renderTemplate('home', { name: data.fullName.trim().split(/\s+/)[0] || 'bienvenido', businessName: merchantName() }),
   charge: () => {
     const mode = data.chargeMode, confirming = mode === 'review';
     const labels = { '÷': 'Dividir', '×': 'Multiplicar', '−': 'Restar', '+': 'Sumar', C: 'Limpiar', '⌫': 'Borrar último', '=': 'Igual' };
@@ -183,28 +194,65 @@ const screens = {
       listeningClass: data.listening ? 'listening' : '', micLabel: data.listening ? 'Detener dictado' : 'Iniciar dictado de voz',
       speechLabel: data.listening ? 'Te escucho…' : 'Toca el micrófono para hablar', voiceText: data.voiceText,
       voiceReadAloud: data.voiceReadAloud, voiceReadLabel: data.voiceReadAloud ? 'activada' : 'desactivada',
+      lastTranscript: data.voiceLastTranscript, lastTranscriptHidden: hiddenUnless(Boolean(data.voiceLastTranscript)),
+      voiceMessage: data.voiceMessage, voiceTotal: money(voiceTotal()),
+      voiceItems: html(data.voiceItems.map(item => renderTemplate('voiceItem', { label: item.label, amount: money(item.cents / 100) })).join('')),
       calculation: data.calculation, keys: html(keys), amount: money(data.amount), amountInput: data.amountInput,
       description: data.description, error: errorHtml()
     });
   },
   payment: () => {
-    const payment = data.payment, paid = payment.status === 'paid';
+    const payment = data.payment, paid = payment.status === 'confirmed';
     return renderTemplate('payment', {
       title: paid ? '¡Operación simulada!' : 'Muestra tu QR',
       subtitle: paid ? 'La operación de prueba quedó registrada en esta sesión.' : 'Código ilustrativo. No puede utilizarse para pagar.',
       amount: money(payment.amount), description: payment.description,
-      pendingHidden: hiddenUnless(!paid), paidHidden: hiddenUnless(paid), qr: html(paid ? '' : qrPattern())
+      businessName: payment.businessName, reference: payment.reference, createdAt: displayDate(payment.createdAt),
+      paidMessage: 'Pagaste ' + money(payment.amount) + ' MXN en ' + payment.businessName + '. Operación simulada.',
+      pendingHidden: hiddenUnless(!paid), paidHidden: hiddenUnless(paid), qr: html(paid ? '' : demoQrSvg(payment.amount))
     });
   },
-  history: () => renderTemplate('history', {
-    total: money(data.history.reduce((total, payment) => total + payment.amount, 0)),
-    count: data.history.length, operationLabel: data.history.length === 1 ? 'operación' : 'operaciones',
-    listHidden: hiddenUnless(data.history.length > 0), emptyHidden: hiddenUnless(data.history.length === 0),
-    items: html(data.history.map(payment => renderTemplate('historyItem', {
-      amount: money(payment.amount), id: payment.id, time: payment.time
-    })).join(''))
-  })
+  history: () => {
+    const records = movementRecords(), totals = movementTotals(records);
+    const filtered = filterMovements(records, { status: data.historyFilter, query: data.historyQuery });
+    const selected = records.find(record => record.reference === data.selectedMovementRef);
+    return renderTemplate('history', {
+      total: money(totals.confirmed), pendingTotal: money(totals.pending), count: records.length,
+      operationLabel: records.length === 1 ? 'operación' : 'operaciones', query: data.historyQuery,
+      allPressed: data.historyFilter === 'all', confirmedPressed: data.historyFilter === 'confirmed',
+      pendingPressed: data.historyFilter === 'pending', unpaidPressed: data.historyFilter === 'unpaid',
+      listingHidden: hiddenUnless(!data.selectedMovementRef), detailHidden: hiddenUnless(Boolean(data.selectedMovementRef)),
+      listHidden: hiddenUnless(filtered.length > 0), emptyHidden: hiddenUnless(filtered.length === 0),
+      items: html(filtered.map(record => renderTemplate('historyItem', movementValues(record))).join('')),
+      detail: html(selected ? renderTemplate('movementDetail', movementValues(selected)) : data.selectedMovementRef ? renderTemplate('feedback', { message: 'No encontramos este movimiento en la sesión.' }) : '')
+    });
+  }
 };
+
+function merchantName() { return data.businessName.trim() || 'Negocio de demostración'; }
+function displayDate(value) { return value ? new Date(value).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' }) : 'Pendiente'; }
+function movementRecords() { return data.historyDemoExamples ? exampleMovements() : data.history; }
+function movementValues(record) {
+  return {
+    amount: money(record.amount), reference: record.reference, businessName: record.businessName,
+    statusLabel: movementStatus(record.status).label, createdAt: displayDate(record.createdAt),
+    confirmedAt: displayDate(record.confirmedAt), methodLabel: record.method === 'voice' ? 'Voz' : 'Calculadora',
+    description: record.description || 'Cobro de demostración'
+  };
+}
+function voiceTotal() { return data.voiceItems.reduce((total, item) => total + item.cents, 0) / 100; }
+function reviewVoiceTotal() {
+  prepareCharge(voiceTotal(), data.voiceItems.map(item => item.label + ': ' + money(item.cents / 100)).join(' + '), 'voice');
+}
+function handleVoicePhrase(text) {
+  const result = processVoiceCommand(text, data.voiceItems);
+  if (result.error) return fail(result.message);
+  data.voiceItems = result.items;
+  data.voiceMessage = result.message;
+  data.error = '';
+  if (result.confirm) reviewVoiceTotal(); else render();
+  if (data.voiceReadAloud && !result.confirm) say(result.message);
+}
 
 function render(focus = false) {
   if (!loaded) return;
@@ -234,7 +282,18 @@ function stopListening() {
   voiceInput.cancel();
   data.listening = false;
 }
-function go(screen) {
+function syncHash(replace = false) {
+  const routes = {
+    access: '/acceso', registration: '/registro', home: '/inicio',
+    charge: '/cobrar/' + ({ voice: 'voz', calculator: 'calculadora', review: 'confirmacion' }[data.chargeMode]),
+    payment: data.payment?.status === 'confirmed' ? '/cobrar/comprobante' : '/cobrar/qr',
+    history: '/movimientos' + (data.selectedMovementRef ? '/' + encodeURIComponent(data.selectedMovementRef) : '')
+  };
+  const route = '#' + routes[data.screen];
+  if (location.hash !== route) history[replace ? 'replaceState' : 'pushState'](null, '', route);
+  lastRoutedHash = route;
+}
+function go(screen, fromHash = false) {
   if (!pageNames.includes(screen)) return;
   stopListening();
   stopSmsOtpListener();
@@ -243,17 +302,25 @@ function go(screen) {
     data.screen = 'access';
     data.authMode = 'phone';
     data.error = 'Inicia sesión para acceder a tus cobros.';
+    syncHash(fromHash);
     render(true);
     announce(data.error);
     return;
   }
-  if (screen === 'payment' && !data.payment) return;
+  if (screen === 'payment' && !data.payment) {
+    data.screen = 'home';
+    data.error = '';
+    syncHash(true);
+    render(true);
+    return;
+  }
   data.screen = screen;
   data.error = '';
+  syncHash(fromHash);
   render(true);
 }
 function applyHashRoute(announceError = false) {
-  const hash = location.hash.replace(/^#/, '');
+  let hash = location.hash.replace(/^#/, '');
   if (!hash) {
     if (hasActiveSession(data) && !loaded) data.screen = 'home';
     return;
@@ -263,16 +330,30 @@ function applyHashRoute(announceError = false) {
       establishSession(data, { mode: 'demo', source: 'hash-cobros', phone: data.phone || '5500000000' });
     }
     if (loaded) {
-      go('home');
+      go('home', true);
     } else {
       data.screen = 'home';
       data.error = '';
     }
     return;
   }
+  const movementMatch = hash.match(/^\/movimientos(?:\/(.+))?$/);
+  if (movementMatch) {
+    try { data.selectedMovementRef = decodeURIComponent(movementMatch[1] || ''); } catch { data.selectedMovementRef = ''; }
+    hash = 'history';
+  } else {
+    const aliases = {
+      '/inicio': 'home', '/acceso': 'access', '/bienvenida': 'access', '/registro': 'registration',
+      '/cobrar/voz': 'charge', '/cobrar/calculadora': 'charge', '/cobrar/confirmacion': 'charge',
+      '/cobrar/qr': 'payment', '/cobrar/comprobante': 'payment'
+    };
+    const modes = { '/cobrar/voz': 'voice', '/cobrar/calculadora': 'calculator', '/cobrar/confirmacion': 'review' };
+    if (modes[hash]) data.chargeMode = modes[hash];
+    hash = aliases[hash] || hash;
+  }
   if (!pageNames.includes(hash)) return;
   if (loaded) {
-    go(hash);
+    go(hash, true);
     return;
   }
   if (isProtectedRoute(hash) && !hasActiveSession(data)) {
@@ -298,6 +379,7 @@ function setChargeMode(mode) {
   stopListening();
   data.chargeMode = mode;
   data.error = '';
+  syncHash();
   render(true);
 }
 function prepareCharge(amount, description, source) {
@@ -316,7 +398,7 @@ function listen() {
 
 app.addEventListener('input', event => {
   const field = event.target;
-  const directFields = { fullName: 'fullName', dob: 'dob', email: 'email', holder: 'holder', spoken: 'voiceText', amountEdit: 'amountInput' };
+  const directFields = { fullName: 'fullName', businessName: 'businessName', dob: 'dob', email: 'email', holder: 'holder', spoken: 'voiceText', amountEdit: 'amountInput' };
   if (directFields[field.id]) { data[directFields[field.id]] = field.value; return; }
   switch (field.id) {
     case 'phoneNumber':
@@ -331,6 +413,15 @@ app.addEventListener('input', event => {
     case 'clabe': data.clabe = digits(field.value).slice(0, 18); field.value = data.clabe; break;
     case 'rfc': data.rfc = field.value.toUpperCase(); field.value = data.rfc; break;
     case 'adultConsent': data.consent = field.checked; break;
+    case 'historySearch': {
+      data.historyQuery = field.value;
+      const start = field.selectionStart;
+      render();
+      const search = $('historySearch');
+      search?.focus({ preventScroll: true });
+      search?.setSelectionRange(start, start);
+      break;
+    }
   }
 });
 app.addEventListener('change', event => {
@@ -410,10 +501,16 @@ app.addEventListener('submit', async event => {
 app.addEventListener('click', async event => {
   const button = event.target.closest('button');
   if (!button) return;
-  if (button.dataset.to) { go(button.dataset.to); return; }
+  if (button.dataset.to) {
+    if (button.dataset.to === 'history') data.selectedMovementRef = '';
+    go(button.dataset.to); return;
+  }
+  if (button.dataset.movementRef) { data.selectedMovementRef = button.dataset.movementRef; go('history'); return; }
+  if (button.dataset.historyFilter) { data.historyFilter = button.dataset.historyFilter; render(); return; }
   if (button.dataset.charge) {
     data.chargeMode = button.dataset.charge;
-    data.voiceText = ''; data.calculation = '0'; data.amountInput = ''; data.amount = 0; data.description = '';
+    data.voiceText = ''; data.voiceLastTranscript = ''; data.voiceItems = []; data.voiceMessage = '';
+    data.calculation = '0'; data.amountInput = ''; data.amount = 0; data.description = '';
     go('charge'); return;
   }
   if (button.dataset.mode) { setChargeMode(button.dataset.mode); return; }
@@ -468,10 +565,11 @@ app.addEventListener('click', async event => {
     case 'toggleClabe': data.showClabe = !data.showClabe; render(); break;
     case 'fillTestClabe':
       data.clabe = '999123456789012346'; data.email = data.email.trim() || 'comercio.prueba@ejemplo.com';
+      data.businessName = data.businessName.trim() || 'Tacos Juanita';
       data.holder = data.holder.trim() || 'Comercio de demostración'; data.showClabe = true; data.error = ''; render(); break;
     case 'simulateRequest': if (checkBank()) registrationStep('ready'); break;
     case 'demoPasskey': {
-      establishSession(data, { mode: 'demo', source: 'demo-passkey', phone: data.phone, fullName: data.fullName });
+      establishSession(data, { mode: 'demo', source: 'demo-passkey', phone: data.phone, fullName: data.fullName, businessName: data.businessName });
       const target = data.redirectAfterAuth || 'home';
       data.redirectAfterAuth = null;
       go(target);
@@ -487,10 +585,10 @@ app.addEventListener('click', async event => {
       break;
     case 'interpret': {
       stopListening();
-      const result = interpret(data.voiceText);
-      if (!result) return fail('No pude calcular el total. Prueba “Cobra 85 pesos” o “Dos cafés de 45 y tres panes de 30”.');
-      prepareCharge(result.amount, result.description, 'voice'); break;
+      handleVoicePhrase(data.voiceText); break;
     }
+    case 'voiceConfirm': stopListening(); reviewVoiceTotal(); break;
+    case 'voiceClear': stopListening(); data.voiceItems = []; data.voiceText = ''; data.voiceMessage = 'Puedes iniciar una nueva venta.'; data.error = ''; render(); break;
     case 'calcPay': {
       const result = evaluate(data.calculation);
       if (result === null) return fail('Completa una operación válida antes de cobrar.');
@@ -502,14 +600,30 @@ app.addEventListener('click', async event => {
     case 'generateQR':
       if (!validAmount(data.amountInput)) { fail('El importe debe estar entre $0.01 y $999,999.99.'); $('amountEdit').focus(); return; }
       data.amount = Math.round(Number(data.amountInput) * 100) / 100;
-      data.payment = { id: ++data.lastId, amount: data.amount, description: data.description, status: 'pending' };
+      data.lastId += 1;
+      data.payment = {
+        id: data.lastId, reference: 'CVDEMO-' + Date.now().toString(36).toUpperCase() + '-' + data.lastId,
+        amount: data.amount, description: data.description, status: 'pending', businessName: merchantName(),
+        method: data.source, createdAt: new Date().toISOString(), confirmedAt: null
+      };
+      data.historyDemoExamples = false;
+      data.history.unshift(data.payment);
       go('payment'); announce('QR ilustrativo generado. No es válido para pagar.'); break;
     case 'editAmount': data.chargeMode = 'review'; go('charge'); break;
     case 'simulatePaid':
       if (!data.payment || data.payment.status !== 'pending') return;
-      data.payment.status = 'paid';
-      data.history.unshift({ ...data.payment, time: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) });
-      render(true); announce('Pago simulado. No se realizó una transferencia real.'); break;
+      data.payment.status = 'confirmed';
+      data.payment.confirmedAt = new Date().toISOString();
+      syncHash();
+      render(true); announce('Pago simulado. No se realizó una transferencia real.');
+      if (data.voiceReadAloud) say('Pagaste ' + data.payment.amount + ' pesos mexicanos en ' + data.payment.businessName + '. Pago simulado.');
+      break;
+    case 'backToMovements': data.selectedMovementRef = ''; go('history'); break;
+    case 'readMovement': {
+      const movement = movementRecords().find(record => record.reference === data.selectedMovementRef);
+      if (movement) say('Movimiento de demostración por ' + movement.amount + ' pesos mexicanos en ' + movement.businessName + '. Estado ' + movementStatus(movement.status).label + '. Referencia ' + movement.reference);
+      break;
+    }
     case 'logout': {
       stopListening();
       stopSmsOtpListener();
@@ -527,7 +641,13 @@ $('contrastBtn').addEventListener('click', () => { data.contrast = !data.contras
 $('voiceBtn').addEventListener('click', () => {
   say((app.querySelector('h1')?.textContent || 'CobraVoz') + '. ' + (app.querySelector('.subtitle')?.textContent || ''));
 });
-window.addEventListener('hashchange', () => applyHashRoute(true));
+function routeChanged() {
+  if (location.hash === lastRoutedHash) return;
+  lastRoutedHash = location.hash;
+  applyHashRoute(true);
+}
+window.addEventListener('hashchange', routeChanged);
+window.addEventListener('popstate', routeChanged);
 window.addEventListener('pagehide', () => {
   stopListening();
   stopSmsOtpListener();
@@ -537,6 +657,7 @@ applyHashRoute(false);
 loadViews().then(() => {
   loaded = true;
   render();
+  syncHash(true);
   if (data.error) announce(data.error);
 }).catch(error => {
   console.error('No se pudieron cargar las vistas de CobraVoz.', error);

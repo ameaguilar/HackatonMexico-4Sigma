@@ -14,8 +14,9 @@
     </form>
     {{{sms}}}
     <form id="bankForm" novalidate {{bankHidden}}>
+      <div class="field"><label for="businessName">Nombre de tu negocio</label><input class="input" id="businessName" autocomplete="organization" minlength="2" maxlength="70" placeholder="Ej. Tacos Juanita" value="{{businessName}}" required><small class="hint">Este nombre aparecerá en tus cobros y comprobantes de demostración.</small></div>
       <div class="field"><label for="email">Correo de contacto</label><input class="input" id="email" type="email" autocomplete="email" placeholder="nombre@ejemplo.com" value="{{email}}" required><small class="hint">Para notificaciones y recuperación. No verificamos el correo en esta demo.</small></div>
-      <div class="field"><div class="label">Tipo de titular</div><div class="choice"><button type="button" data-entity="person" aria-pressed="{{isPerson}}">Persona</button><button type="button" data-entity="business" aria-pressed="{{isBusiness}}">Empresa</button></div></div>
+      <div class="field"><div class="label">Tipo de persona fiscal</div><div class="choice"><button type="button" data-entity="person" aria-pressed="{{isPerson}}">Persona física</button><button type="button" data-entity="business" aria-pressed="{{isBusiness}}">Persona moral</button></div></div>
       <div class="field"><label for="holder">Nombre legal del titular</label><input class="input" id="holder" autocomplete="off" placeholder="Como aparece en tu banco" value="{{holder}}" required></div>
       <div class="field"><div class="inline-toggle"><label for="clabe">CLABE interbancaria (18 dígitos)</label><button class="text-toggle" type="button" data-action="toggleClabe">{{clabeLabel}}</button></div><input class="input clabe" id="clabe" type="{{clabeType}}" inputmode="numeric" autocomplete="off" maxlength="18" value="{{clabe}}" required><small class="hint">Es la CLABE, no el número de tarjeta. Revisamos su dígito de control.</small></div>
       <div class="field" {{rfcHidden}}><label for="rfc">RFC de la empresa (opcional)</label><input class="input" id="rfc" maxlength="13" value="{{rfc}}" placeholder="Ej. ABC010203XXX"></div>
@@ -26,6 +27,7 @@
     </form>
     <div {{reviewHidden}}>
       <div class="summary-card">
+        <div class="summary-row"><span>Negocio</span><strong>{{businessName}}</strong></div>
         <div class="summary-row"><span>Persona</span><strong>{{fullName}}</strong></div>
         <div class="summary-row"><span>Celular</span><strong>+52 {{phone}}</strong></div>
         <div class="summary-row"><span>Correo</span><strong>{{email}}</strong></div>

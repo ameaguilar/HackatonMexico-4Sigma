@@ -8,10 +8,15 @@
       <div {{voiceHidden}}>
         <div class="mic-halo"><button class="mic-core {{listeningClass}}" type="button" data-action="listen" aria-label="{{micLabel}}" aria-pressed="{{listening}}">🎙</button></div>
         <p class="speech-label">{{speechLabel}}</p>
+        <p class="mini-note" {{lastTranscriptHidden}}>Último dictado: {{lastTranscript}}</p>
         <p class="speech-hint">Puedes decir: “Cobra 85 pesos” o “Dos cafés de 45 y tres panes de 30”.</p>
         <button class="link-btn" type="button" data-action="voiceReadToggle" aria-pressed="{{voiceReadAloud}}">Lectura de respuestas: {{voiceReadLabel}}</button>
         <div class="field"><label for="spoken">¿Qué vendiste? También puedes escribirlo</label><textarea class="input" id="spoken" placeholder="Ej. Cobra 85 pesos" spellcheck="true">{{voiceText}}</textarea></div>
-        <button class="primary" type="button" data-action="interpret">Revisar importe →</button>
+        <button class="secondary" type="button" data-action="interpret">Interpretar frase</button>
+        <div class="notice" role="status">{{voiceMessage}}</div>
+        <div class="summary-card" aria-label="Venta actual en MXN">{{{voiceItems}}}<p class="amount-label">Total para cobrar · MXN</p><p class="amount">{{voiceTotal}}</p></div>
+        <button class="primary" type="button" data-action="voiceConfirm">Revisar total →</button>
+        <button class="link-btn" type="button" data-action="voiceClear">Limpiar venta</button>
         <p class="mini-note">El dictado requiere permiso de micrófono y usa el servicio de tu navegador, que podría procesar el audio. También puedes escribir el cobro.</p>
       </div>
       <div {{calculatorHidden}}>
@@ -31,6 +36,10 @@
     </div>
     {{{error}}}
   </section>
+</template>
+
+<template id="voiceItem">
+  <div class="summary-row"><span>{{label}}</span><strong>{{amount}}</strong></div>
 </template>
 
 <template id="calculatorKey">
