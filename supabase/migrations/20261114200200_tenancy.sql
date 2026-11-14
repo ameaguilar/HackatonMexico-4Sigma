@@ -108,8 +108,10 @@ create policy profiles_update_own on public.profiles
   for update to authenticated using (id = (select auth.uid())) with check (id = (select auth.uid()));
 
 -- businesses: los miembros leen; cualquiera autenticado crea un negocio propio; dueño/admin editan.
+-- `owner_id = auth.uid()` es necesario para INSERT ... RETURNING (lo usa supabase-js): la política SELECT
+-- se evalúa antes de que el trigger AFTER registre al dueño en business_members.
 create policy businesses_select_member on public.businesses
-  for select to authenticated using (private.is_member(id));
+  for select to authenticated using (owner_id = (select auth.uid()) or private.is_member(id));
 create policy businesses_insert_self on public.businesses
   for insert to authenticated with check (owner_id = (select auth.uid()));
 create policy businesses_update_admin on public.businesses

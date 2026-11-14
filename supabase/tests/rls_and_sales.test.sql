@@ -70,7 +70,12 @@ reset role;
 
 set local request.jwt.claim.sub = :B;
 set local role authenticated;
-insert into public.businesses (owner_id, nombre) values (:B, 'Jugos Beto');
+-- supabase-js usa INSERT ... RETURNING: el dueño debe poder leer el negocio en la misma sentencia.
+with creado as (insert into public.businesses (owner_id, nombre) values (:B, 'Jugos Beto') returning nombre)
+select tests.ok((select nombre from creado) = 'Jugos Beto', 'INSERT ... RETURNING devuelve el negocio recién creado');
+with creado as (insert into public.products (business_id, nombre, precio_actual_centavos)
+                select id, 'Agua de horchata', 2500 from public.businesses where owner_id = :B returning nombre)
+select tests.ok((select nombre from creado) = 'Agua de horchata', 'INSERT ... RETURNING devuelve el producto recién creado');
 reset role;
 
 select id as biz_a from public.businesses where owner_id = :A \gset
@@ -100,7 +105,7 @@ reset role;
 
 select id as tacos_a from public.products where business_id = :'biz_a' and nombre = 'Tacos' \gset
 select id as coca_a  from public.products where business_id = :'biz_a' and nombre = 'Coca' \gset
-select id as jugo_b  from public.products where business_id = :'biz_b' \gset
+select id as jugo_b  from public.products where business_id = :'biz_b' and nombre = 'Jugo de naranja' \gset
 
 \echo '# Aislamiento entre negocios (B no ve ni toca nada de A)'
 set local request.jwt.claim.sub = :B;
