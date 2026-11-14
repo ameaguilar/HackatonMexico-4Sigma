@@ -1,0 +1,19 @@
+<template id="payment">
+  <section class="screen">
+    <button class="back" type="button" data-to="home">← Volver al inicio</button>
+    <div class="payment-success" aria-hidden="true" {{paidHidden}}>✓</div>
+    <h1 class="title">{{title}}</h1>
+    <p class="subtitle">{{subtitle}}</p>
+    <div class="summary-card">
+      <p class="amount-label">Importe de prueba</p><p class="amount">{{amount}}</p>
+      <p class="charge-description">{{description}}</p>
+      <div {{pendingHidden}}>
+        <div class="qr-wrap" role="img" aria-label="QR ilustrativo con sello DEMO, no válido para pagar"><div class="qr-pattern">{{{qr}}}</div><span class="qr-overlay">DEMO</span></div>
+        <div class="status"><div class="status-bubble">⌛</div><div><h3>En espera · simulación</h3><p>Este QR es ilustrativo. No representa una solicitud de pago.</p></div></div>
+      </div>
+      <p class="notice" {{paidHidden}}>Operación simulada. No se realizó ningún movimiento de dinero.</p>
+    </div>
+    <div {{pendingHidden}}><button class="primary" type="button" data-action="simulatePaid">Simular pago recibido ✓</button><button class="secondary" type="button" data-action="editAmount">Corregir importe</button></div>
+    <div {{paidHidden}}><button class="primary" type="button" data-to="home">Volver a cobrar →</button><button class="secondary" type="button" data-to="history">Ver mis cobros de prueba</button></div>
+  </section>
+</template>

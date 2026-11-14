@@ -1,0 +1,49 @@
+<template id="registration">
+  <section class="screen">
+    <button class="back" type="button" data-action="registrationBack">← Volver</button>
+    <div class="step"><span>Registro</span><span>{{stepLabel}}</span></div>
+    <h1 class="title">{{title}}</h1>
+    <p class="subtitle">{{subtitle}}</p>
+    <form id="identityForm" novalidate {{identityHidden}}>
+      <div class="field"><label for="fullName">Tu nombre completo</label><input class="input" id="fullName" autocomplete="name" required placeholder="Ej. María López" value="{{fullName}}"></div>
+      <div class="field"><label for="dob">Fecha de nacimiento</label><input class="input" id="dob" type="date" max="{{today}}" required value="{{dob}}"><small class="hint">Solo pueden registrarse personas de 18 años o más. La fecha declarada no sustituye una verificación de identidad.</small></div>
+      <div class="field"><label for="phoneNumber">Tu celular de México</label><div class="country-phone"><span class="country">🇲🇽 +52</span><input class="input" id="phoneNumber" type="tel" inputmode="tel" autocomplete="tel-national" placeholder="10 dígitos" value="{{phone}}" aria-describedby="phoneHelp" required></div><small class="hint" id="phoneHelp">Solo números mexicanos de 10 dígitos.</small></div>
+      <div class="check-row"><input id="adultConsent" type="checkbox" {{consentChecked}}><label for="adultConsent">Confirmo que tengo 18 años o más y que este número es mío.</label></div>
+      {{{identityError}}}
+      <button class="primary" type="submit">Verificar mi celular →</button>
+    </form>
+    {{{sms}}}
+    <form id="bankForm" novalidate {{bankHidden}}>
+      <div class="field"><label for="email">Correo de contacto</label><input class="input" id="email" type="email" autocomplete="email" placeholder="nombre@ejemplo.com" value="{{email}}" required><small class="hint">Para notificaciones y recuperación. No verificamos el correo en esta demo.</small></div>
+      <div class="field"><div class="label">Tipo de titular</div><div class="choice"><button type="button" data-entity="person" aria-pressed="{{isPerson}}">Persona</button><button type="button" data-entity="business" aria-pressed="{{isBusiness}}">Empresa</button></div></div>
+      <div class="field"><label for="holder">Nombre legal del titular</label><input class="input" id="holder" autocomplete="off" placeholder="Como aparece en tu banco" value="{{holder}}" required></div>
+      <div class="field"><div class="inline-toggle"><label for="clabe">CLABE interbancaria (18 dígitos)</label><button class="text-toggle" type="button" data-action="toggleClabe">{{clabeLabel}}</button></div><input class="input clabe" id="clabe" type="{{clabeType}}" inputmode="numeric" autocomplete="off" maxlength="18" value="{{clabe}}" required><small class="hint">Es la CLABE, no el número de tarjeta. Revisamos su dígito de control.</small></div>
+      <div class="field" {{rfcHidden}}><label for="rfc">RFC de la empresa (opcional)</label><input class="input" id="rfc" maxlength="13" value="{{rfc}}" placeholder="Ej. ABC010203XXX"></div>
+      <button class="secondary" type="button" data-action="fillTestClabe">Completar datos de demostración</button>
+      <p class="mini-note">Puedes probar con datos ficticios. No enviamos ni almacenamos datos bancarios en un servidor.</p>
+      {{{bankError}}}
+      <button class="primary" type="submit">Revisar datos →</button>
+    </form>
+    <div {{reviewHidden}}>
+      <div class="summary-card">
+        <div class="summary-row"><span>Persona</span><strong>{{fullName}}</strong></div>
+        <div class="summary-row"><span>Celular</span><strong>+52 {{phone}}</strong></div>
+        <div class="summary-row"><span>Correo</span><strong>{{email}}</strong></div>
+        <div class="summary-row"><span>Tipo</span><strong>{{entityLabel}}</strong></div>
+        <div class="summary-row"><span>Titular</span><strong>{{holder}}</strong></div>
+        <div class="summary-row"><span>CLABE</span><strong>••••••••••••••{{clabeLast}}</strong></div>
+      </div>
+      <div class="notice">La cuenta y la identidad se validarán con el proveedor en producción. Esta solicitud es simulada.</div>
+      {{{reviewError}}}
+      <button class="primary" type="button" data-action="simulateRequest">Preparar solicitud de prueba →</button>
+    </div>
+    <div {{readyHidden}}>
+      <div class="status"><div class="status-bubble">⌛</div><div><h3>Cuenta CoDi: pendiente</h3><p>Estado ilustrativo. Los cobros reales requieren una cuenta habilitada por el proveedor.</p></div></div>
+      <div class="notice">No enviamos tu CLABE ni creamos una cuenta bancaria. Puedes explorar los cobros simulados.</div>
+      <h2>Acceso sin contraseña</h2>
+      <p class="mini-note">En producción podrás usar rostro, huella o PIN con passkeys. Tu biometría permanece en el dispositivo.</p>
+      <button class="primary" type="button" data-action="demoPasskey">Activar acceso rápido (demo)</button>
+      <button class="secondary" type="button" data-to="home">Ahora no, explorar la demo</button>
+    </div>
+  </section>
+</template>

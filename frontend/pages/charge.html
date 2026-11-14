@@ -1,0 +1,38 @@
+<template id="charge">
+  <section class="screen">
+    <button class="back" type="button" data-action="chargeBack">← {{backLabel}}</button>
+    <h1 class="title">{{title}}</h1>
+    <p class="subtitle">{{subtitle}}</p>
+    <div {{captureHidden}}>
+      <div class="choice charge-tabs" role="group" aria-label="Forma de calcular el cobro"><button type="button" data-mode="voice" aria-pressed="{{voiceActive}}">Con voz</button><button type="button" data-mode="calculator" aria-pressed="{{calculatorActive}}">Calculadora</button></div>
+      <div {{voiceHidden}}>
+        <div class="mic-halo"><button class="mic-core {{listeningClass}}" type="button" data-action="listen" aria-label="{{micLabel}}" aria-pressed="{{listening}}">🎙</button></div>
+        <p class="speech-label">{{speechLabel}}</p>
+        <p class="speech-hint">Puedes decir: “Cobra 85 pesos” o “Dos cafés de 45 y tres panes de 30”.</p>
+        <button class="link-btn" type="button" data-action="voiceReadToggle" aria-pressed="{{voiceReadAloud}}">Lectura de respuestas: {{voiceReadLabel}}</button>
+        <div class="field"><label for="spoken">¿Qué vendiste? También puedes escribirlo</label><textarea class="input" id="spoken" placeholder="Ej. Cobra 85 pesos" spellcheck="true">{{voiceText}}</textarea></div>
+        <button class="primary" type="button" data-action="interpret">Revisar importe →</button>
+        <p class="mini-note">El dictado requiere permiso de micrófono y usa el servicio de tu navegador, que podría procesar el audio. También puedes escribir el cobro.</p>
+      </div>
+      <div {{calculatorHidden}}>
+        <div class="calc-box"><div class="calc-display"><span>Tu cuenta</span><output class="calc-expression" aria-label="Operación actual">{{calculation}}</output></div><div class="keypad">{{{keys}}}</div></div>
+        <button class="primary" type="button" data-action="calcPay">Cobrar resultado →</button>
+      </div>
+    </div>
+    <div {{confirmationHidden}}>
+      <div class="summary-card">
+        <p class="amount-label">Total por cobrar</p><p class="amount">{{amount}}</p>
+        <p class="charge-description">{{description}}</p>
+        <div class="field"><label for="amountEdit">Corregir importe (pesos)</label><input class="input" id="amountEdit" type="number" inputmode="decimal" step="0.01" min="0.01" max="999999.99" value="{{amountInput}}"></div>
+        <button class="secondary" type="button" data-action="speakAmount">Escuchar el importe</button>
+      </div>
+      <button class="primary" type="button" data-action="generateQR">Generar QR de demostración →</button>
+      <p class="mini-note">Confirma el importe antes de continuar. No se crea una solicitud bancaria.</p>
+    </div>
+    {{{error}}}
+  </section>
+</template>
+
+<template id="calculatorKey">
+  <button class="key {{classes}}" type="button" data-key="{{key}}" aria-label="{{label}}">{{key}}</button>
+</template>

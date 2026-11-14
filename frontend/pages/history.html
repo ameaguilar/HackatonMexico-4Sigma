@@ -1,0 +1,15 @@
+<template id="history">
+  <section class="screen">
+    <button class="back" type="button" data-to="home">← Volver al inicio</button>
+    <h1 class="title">Mis cobros</h1>
+    <p class="subtitle">Operaciones simuladas durante esta sesión.</p>
+    <div class="summary-card"><p class="amount-label">Total simulado</p><p class="amount">{{total}}</p><p class="amount-label">{{count}} {{operationLabel}} de prueba</p></div>
+    <div class="history-list" role="list" aria-label="Operaciones simuladas" {{listHidden}}>{{{items}}}</div>
+    <p class="empty" {{emptyHidden}}>Todavía no tienes cobros de prueba.<br>Haz uno con voz o con calculadora.</p>
+    <button class="primary" type="button" data-to="home">Volver a cobrar →</button>
+  </section>
+</template>
+
+<template id="historyItem">
+  <div class="history-card" role="listitem"><div><strong>{{amount}}</strong><small>Operación #{{id}} · {{time}}</small></div><span class="history-badge">Simulada</span></div>
+</template>

@@ -1,0 +1,36 @@
+<template id="access">
+  <section class="screen">
+    <h1 class="title">Tu negocio empieza aquí.</h1>
+    <p class="subtitle">Entra con tu celular mexicano o crea tu cuenta para explorar CobraVoz.</p>
+    <div {{phoneHidden}}>
+      <form id="loginForm" novalidate>
+        <div class="field">
+          <label for="loginPhoneInput">Celular de México</label>
+          <div class="country-phone"><span class="country">🇲🇽 +52</span><input class="input" id="loginPhoneInput" type="tel" inputmode="tel" autocomplete="tel-national" placeholder="10 dígitos" value="{{phone}}"></div>
+        </div>
+        {{{error}}}
+        <button class="primary" type="submit">Continuar con SMS →</button>
+      </form>
+      <button class="secondary" type="button" data-action="demoLogin">Entrar con rostro, huella o PIN (demo)</button>
+      <button class="link-btn" type="button" data-action="signup">Crear mi cuenta</button>
+      <div class="notice">Acceso de demostración. No se envían SMS ni se registra tu biometría.</div>
+    </div>
+    {{{sms}}}
+  </section>
+</template>
+
+<template id="feedback">
+  <div class="error" role="alert">{{message}}</div>
+</template>
+
+<!-- El mismo formulario verifica el teléfono de acceso y el de registro. -->
+<template id="smsForm">
+  <form id="smsForm" novalidate>
+    <p class="notice">Confirma el celular +52 {{maskedPhone}}. No se envían SMS: utiliza <strong>123456</strong> para probar.</p>
+    <div class="field"><label for="code">Código de 6 dígitos</label><small class="hint" id="codeHelp">Ingresa los 6 dígitos enviados a tu celular.</small><input class="input code" id="code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="\d{6}" maxlength="6" placeholder="000000" aria-describedby="codeHelp" value="{{code}}" required></div>
+    {{{error}}}
+    <button class="primary" type="submit">Confirmar teléfono ✓</button>
+    <button class="link-btn" type="button" data-action="resend">Reenviar código de prueba</button>
+    <button class="secondary" type="button" data-action="editPhone">Corregir mi celular</button>
+  </form>
+</template>
