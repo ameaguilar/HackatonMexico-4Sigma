@@ -1,5 +1,5 @@
 /* CobraVoz V3 demo PWA: solo archivos estáticos, nunca cachear pagos. */
-const CACHE="cobravoz-preview-movimientos-v5-20261114";
+const CACHE="cobravoz-preview-voz-mxn-v6-20261114";
 const ASSETS=["./","./index.html","./cobros-v1.html","./manifest.webmanifest","./icons/cobravoz.svg"];
 self.addEventListener("install",event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)));self.skipWaiting();});
 self.addEventListener("activate",event=>{event.waitUntil(Promise.all([caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))),self.clients.claim()]));});
