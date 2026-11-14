@@ -1,0 +1,23 @@
+<template id="payment">
+  <section class="screen">
+    <button class="back" type="button" data-to="home">← Volver al inicio</button>
+    <div class="payment-success" aria-hidden="true" {{paidHidden}}>✓</div>
+    <h1 class="title">{{title}}</h1>
+    <p class="subtitle">{{subtitle}}</p>
+    <div class="summary-card">
+      <p class="amount-label">Importe de prueba</p><p class="amount">{{amount}}</p>
+      <div class="summary-row"><span>Negocio</span><strong>{{businessName}}</strong></div>
+      <div class="summary-row"><span>Referencia</span><strong>{{reference}}</strong></div>
+      <div class="summary-row"><span>Creado</span><strong>{{createdAt}}</strong></div>
+      <p class="charge-description">{{description}}</p>
+      <div {{pendingHidden}}>
+        <div class="qr-wrap demo-qr" role="img" aria-label="Código QR de demostración con el importe, no válido para pagar">{{{qr}}}</div>
+        <p class="amount-label">QR DEMO · NO PAGABLE</p>
+        <div class="status"><div class="status-bubble">⌛</div><div><h3>En espera · simulación</h3><p>Este QR es ilustrativo. No representa una solicitud de pago.</p></div></div>
+      </div>
+      <p class="notice" {{paidHidden}}>{{paidMessage}}</p>
+    </div>
+    <div {{pendingHidden}}><button class="primary" type="button" data-action="simulatePaid">Simular pago recibido ✓</button><button class="secondary" type="button" data-action="editAmount">Corregir importe</button></div>
+    <div {{paidHidden}}><button class="primary" type="button" data-to="home">Volver a cobrar →</button><button class="secondary" type="button" data-to="history">Ver mis movimientos</button></div>
+  </section>
+</template>

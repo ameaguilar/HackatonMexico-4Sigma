@@ -1,0 +1,19 @@
+{
+  "name": "CobraVoz · Cobros accesibles",
+  "short_name": "CobraVoz",
+  "description": "Frontend PWA inclusivo de CobraVoz. Demo sin cobros reales.",
+  "lang": "es-MX",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#006341",
+  "icons": [
+    {
+      "src": "./icons/cobravoz.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

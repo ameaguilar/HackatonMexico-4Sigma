@@ -1,0 +1,5 @@
+[build]
+  publish = "frontend"
+
+# El sitio de preview publica únicamente la interfaz accesible.
+# Backend, variables privadas y otros servicios permanecen fuera del directorio publicado.
