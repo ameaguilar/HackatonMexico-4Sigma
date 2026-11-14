@@ -1,6 +1,5 @@
 [build]
-  publish = "."
+  publish = "frontend"
 
-# Prototipo frontend estático sin API ni claves bancarias.
-[context.production]
-  command = ""
+# El sitio de preview publica únicamente la interfaz accesible.
+# Backend, variables privadas y otros servicios permanecen fuera del directorio publicado.
