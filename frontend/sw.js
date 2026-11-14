@@ -1,5 +1,5 @@
 /* CobraVoz demo PWA: solo archivos estáticos, nunca cachear pagos reales ni respuestas de autenticación. */
-const CACHE="cobravoz-preview-unificado-v18-20261114";
+const CACHE="cobravoz-preview-unificado-v19-20261114";
 const ASSETS=[
   "./",
   "./index.html",
