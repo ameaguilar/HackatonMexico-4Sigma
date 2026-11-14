@@ -37,9 +37,10 @@ syncTheme();positionDock();
 if('MutationObserver' in window)new MutationObserver(syncTheme).observe(phone,{attributes:true,attributeFilter:['class']});
 window.addEventListener('resize',positionDock,{passive:true});
 window.addEventListener('orientationchange',positionDock);
-function addMessage(txt,role){const div=document.createElement('div');div.className='cv-help-message '+role;div.textContent=txt;log.appendChild(div);log.scrollTop=log.scrollHeight;}
+function scrollLatestAnswer(){window.requestAnimationFrame(()=>{log.scrollTop=log.scrollHeight;});}
+function addMessage(txt,role){const div=document.createElement('div');div.className='cv-help-message '+role;div.textContent=txt;log.appendChild(div);scrollLatestAnswer();}
 function suggestions(){quick.replaceChildren();for(const i of [1,4,8,10]){const b=document.createElement('button');b.type='button';b.textContent=faq[i][0];b.addEventListener('click',()=>answer(faq[i][0]));quick.appendChild(b)}}
-function openChat(){returnFocus=document.activeElement;fab.hidden=true;panel.hidden=false;fab.setAttribute('aria-expanded','true');if(!log.childNodes.length)addMessage('¡Hola! Puedo ayudarte con cobros, QR, CLABE y accesibilidad. No solicito datos bancarios.','bot');suggestions();close.focus();}
+function openChat(){returnFocus=document.activeElement;fab.hidden=true;panel.hidden=false;fab.setAttribute('aria-expanded','true');if(!log.childNodes.length)addMessage('¡Hola! Puedo ayudarte con cobros, QR, CLABE y accesibilidad. No solicito datos bancarios.','bot');suggestions();scrollLatestAnswer();close.focus();}
 function closeChat(){panel.hidden=true;fab.hidden=false;fab.setAttribute('aria-expanded','false');(returnFocus&&returnFocus.isConnected?returnFocus:fab).focus();}
 function matchFAQ(query){const q=norm(query),words=q.split(' ').filter(w=>w.length>2);let best=null,score=0;for(const entry of faq){const title=norm(entry[0]),all=norm(entry[0]+' '+entry[2]);let rank=title===q?25:0;if(q.length>4&&title.includes(q))rank+=11;for(const token of words){if(title.includes(token))rank+=4;else if(all.includes(token))rank+=2;}if(rank>score){score=rank;best=entry;}}return score>=4?best:null;}
 function answer(value){const q=String(value||'').trim().slice(0,180);if(!q)return;

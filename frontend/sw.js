@@ -1,12 +1,12 @@
 /* CobraVoz demo PWA: solo archivos estáticos, nunca cachear pagos reales ni respuestas de autenticación. */
-const CACHE="cobravoz-ayuda-v8-mwgyg0jx";
+const CACHE="cobravoz-ayuda-v8-1-20261114";
 const ASSETS=[
   "./",
   "./index.html",
   "./manifest.webmanifest",
   "./ayuda.html",
-  "./css/help.css?v=help-v1",
-  "./js/help-widget.js?v=help-v1",
+  "./css/help.css?v=help-v2",
+  "./js/help-widget.js?v=help-v2",
   "./icons/cobravoz.svg",
   "./css/bootstrap.min.css",
   "./css/styles.css?v=merged-1",
