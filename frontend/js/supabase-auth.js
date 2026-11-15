@@ -93,7 +93,9 @@ export function restoreSession(state) {
 }
 
 export function establishSession(state, sessionInfo = {}) {
-  const expiresAt = Number(sessionInfo.expiresAt) || (Date.now() + DEFAULT_SESSION_TTL_MS);
+  // La demo permanece abierta hasta cerrar sesión; Supabase respeta la expiración del servidor.
+  const expiresAt = (sessionInfo.mode || 'demo') === 'demo'
+    ? 0 : (Number(sessionInfo.expiresAt) || (Date.now() + DEFAULT_SESSION_TTL_MS));
   const session = {
     projectRef: SUPABASE_PROJECT_REF,
     mode: sessionInfo.mode || 'demo',

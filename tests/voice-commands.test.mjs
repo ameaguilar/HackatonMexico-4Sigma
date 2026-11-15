@@ -100,3 +100,22 @@ test('cálculo aritmético natural y suma acumulativa sin requerir expresiones t
   assert.equal(unchanged.error, true);
   assert.equal(sum(unchanged), 15000);
 });
+
+
+test('dictado natural sin signos y expresiones comunes actualiza el total', () => {
+  const sum = result => result.items.reduce((n, x) => n + x.cents, 0);
+  for(const [phrase,total] of [
+    ['Súmale 20',2000],['Agrégale 20',2000],
+    ['20 y 50 y 80',15000],['suma 20 50 y 80',15000],
+    ['suma veinte y cincuenta y ochenta',15000],
+    ['suma 20 más 50 más 80',15000],
+    ['dos tacos a 25 y tres aguas a 20',11000]
+  ]){
+    const r=processVoiceCommand(phrase);
+    assert.equal(r.error,false,phrase);
+    assert.equal(sum(r),total,phrase);
+  }
+  let sale=processVoiceCommand('suma 20');
+  for(const phrase of ['y 50','más 80'])sale=processVoiceCommand(phrase,sale.items);
+  assert.equal(sum(sale),15000);
+});

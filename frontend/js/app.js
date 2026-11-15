@@ -44,6 +44,8 @@ const voiceInput = createVoiceController({
   },
   onTranscript(text) {
     if (data.screen !== 'charge' || data.chargeMode !== 'voice') return;
+    data.voiceStatus='ready';
+    data.listening=false;
     data.voiceText = '';
     data.voiceLastTranscript = text;
     data.error = '';
@@ -253,7 +255,6 @@ function persistDemoMovements(){
     owner:data.authSession.phone,lastId:data.lastId,items:data.history.slice(0,500)
   }));}catch{}
 }
-function clearDemoMovements(){try{localStorage.removeItem(DEMO_MOVEMENTS_KEY);}catch{}}
 function resetNextSale(mode='voice'){
   stopListening();
   data.voiceItems=[];data.voiceText='';data.voiceLastTranscript='';data.voiceMessage='';
@@ -289,7 +290,13 @@ function reviewVoiceTotal() {
 }
 function handleVoicePhrase(text) {
   const result = processVoiceCommand(text, data.voiceItems);
-  if (result.error) return fail(result.message);
+  if (result.error) {
+    data.error = '';
+    data.voiceMessage = 'No se agregó al total. ' + result.message;
+    render();
+    announce(data.voiceMessage);
+    return;
+  }
   data.voiceItems = result.items;
   data.voiceMessage = result.message;
   data.error = '';
@@ -364,6 +371,8 @@ function syncHash(replace = false) {
 }
 function go(screen, fromHash = false) {
   if (!pageNames.includes(screen)) return;
+  if(hasActiveSession(data) && ((screen==='access' && data.authMode!=='code')
+      || (screen==='registration' && data.intent!=='signup'))) screen='home';
   stopListening();
   stopSmsOtpListener();
   if (isProtectedRoute(screen) && !hasActiveSession(data)) {
@@ -421,6 +430,8 @@ function applyHashRoute(announceError = false) {
     hash = aliases[hash] || hash;
   }
   if (!pageNames.includes(hash)) return;
+  if(hasActiveSession(data) && ((hash==='access' && data.authMode!=='code')
+      || (hash==='registration' && data.intent!=='signup'))) hash='home';
   if (loaded) {
     go(hash, true);
     return;
@@ -698,7 +709,6 @@ app.addEventListener('click', async event => {
       stopListening();
       stopSmsOtpListener();
       await signOutSession(data);
-      clearDemoMovements();
       const { large, contrast } = data;
       data = { ...initialState(), screen: 'access', large, contrast };
       if (location.hash) history.replaceState(null, '', location.pathname + location.search);

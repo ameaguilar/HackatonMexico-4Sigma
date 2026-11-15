@@ -1,7 +1,4 @@
-/* CobraVoz bootstrap resiliente V12: generado a partir de módulos versionados.
- * No procesa cobros bancarios; QR y SMS de demostración.
- * Evita bloqueos de carga por grafos ESM o peticiones a vistas parciales.
- */
+/* CobraVoz V13: Inicio y registro autosuficientes; voz natural y sesión de jornada. */
 "use strict";
 // frontend/js/payments.js
 const {money,interpret,evaluate,updateCalculation,qrPattern}=(()=>{
@@ -339,12 +336,12 @@ function parseProductCommand(text){
 
 /* Calculadora hablada en centavos, sin eval ni conversiones de divisas. */
 function parseArithmeticCommand(text) {
-  let body = text.replace(/^(?:suma|sumar|agrega|agregar|anade|multiplica|multiplicar|divide|dividir|resta|restar|calcula|calcular|cobra|cobrar)\s+/, '')
+  let body = text.replace(/^(?:suma|sumar|sumale|agrega|agregar|agregale|anade|anadele|multiplica|multiplicar|divide|dividir|resta|restar|calcula|calcular|cobra|cobrar)\s+/, '')
     .replace(/\s+(?:multiplicado|multiplicada)\s+por\s+/g,' por ')
     .replace(/\s+(?:dividido|dividida)\s+(?:entre|por)\s+/g,' entre ');
-  const parts=body.split(/\s+(mas|menos|por|entre|\+)\s+/).map(p=>p.trim());
+  const parts=body.split(/\s+(mas|menos|por|entre|y|\+)\s+/).map(p=>p.trim());
   if(parts.length<3 || parts.length%2===0)return null;
-  const operators=parts.filter((_,i)=>i%2===1).map(x=>x==='+'?'mas':x);
+  const operators=parts.filter((_,i)=>i%2===1).map(x=>x==='+'||x==='y'?'mas':x);
   const values=parts.filter((_,i)=>i%2===0).map(x=>{
     if(/^0(?:[.]0{1,2})?(?:\s+(?:pesos?|mxn))?$/.test(x))return 0;
     return getAmountCents(x);
@@ -373,7 +370,16 @@ function processVoiceCommand(raw, items = []) {
   const answer = (message, next = current, error = false, confirm = false) => ({
     items: next, message, confirm, error
   });
-  const text = accents(raw);
+  // El dictado suele omitir signos: "suma 20 50 y 80" y "y 50" también son válidos.
+  let text = accents(raw)
+    .replace(/^(?:sumale|agregale|anadele)\s+/, 'suma ')
+    .replace(/^(?:y|ademas|mas)\s+(?=\d|un\b|una\b|dos\b|tres\b|cuatro\b|cinco\b)/, 'mas ');
+  // Si las cantidades van separadas por pausas, reconocerlas como sumandos.
+  for(let pass=0;pass<3;pass++){
+    const next=text.replace(/(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)(?=\s+(?:y|mas)\b|$)/g,'$1 mas $2');
+    if(next===text)break;
+    text=next;
+  }
   const foreignCurrency = /\b(?:dolar(?:es)?|dolares|dollars?|usd|euros?|eur|libras?|gbp|yenes?|jpy|soles?|pen|reales?|brl|cop|ars|clp|cad|pesos?\s+(?:colombianos?|argentinos?|chilenos?|dominicanos?|uruguayos?))\b|\bus\s*\$|[€£¥]/;
   if (foreignCurrency.test(text)) return answer('CobraVoz solo acepta pesos mexicanos, MXN. No convertimos ni cobramos otras monedas.', current, true);
   if (!text) return answer('No recibí ninguna frase. Vuelve a hablar o escribe el cobro.', current, true);
@@ -638,7 +644,9 @@ function restoreSession(state) {
 }
 
 function establishSession(state, sessionInfo = {}) {
-  const expiresAt = Number(sessionInfo.expiresAt) || (Date.now() + DEFAULT_SESSION_TTL_MS);
+  // La demo permanece abierta hasta cerrar sesión; Supabase respeta la expiración del servidor.
+  const expiresAt = (sessionInfo.mode || 'demo') === 'demo'
+    ? 0 : (Number(sessionInfo.expiresAt) || (Date.now() + DEFAULT_SESSION_TTL_MS));
   const session = {
     projectRef: SUPABASE_PROJECT_REF,
     mode: sessionInfo.mode || 'demo',
@@ -865,6 +873,8 @@ const voiceInput = createVoiceController({
   },
   onTranscript(text) {
     if (data.screen !== 'charge' || data.chargeMode !== 'voice') return;
+    data.voiceStatus='ready';
+    data.listening=false;
     data.voiceText = '';
     data.voiceLastTranscript = text;
     data.error = '';
@@ -904,7 +914,6 @@ function loadViews() {
   }
   return Promise.resolve();
 }
-
 const errorHtml = () => html(data.error ? renderTemplate('feedback', { message: data.error }) : '');
 const smsHtml = () => html(renderTemplate('smsForm', {
   maskedPhone: data.phone.slice(0, 2) + '•••' + data.phone.slice(-4), code: data.code, error: errorHtml(),
@@ -1071,7 +1080,6 @@ function persistDemoMovements(){
     owner:data.authSession.phone,lastId:data.lastId,items:data.history.slice(0,500)
   }));}catch{}
 }
-function clearDemoMovements(){try{localStorage.removeItem(DEMO_MOVEMENTS_KEY);}catch{}}
 function resetNextSale(mode='voice'){
   stopListening();
   data.voiceItems=[];data.voiceText='';data.voiceLastTranscript='';data.voiceMessage='';
@@ -1107,7 +1115,13 @@ function reviewVoiceTotal() {
 }
 function handleVoicePhrase(text) {
   const result = processVoiceCommand(text, data.voiceItems);
-  if (result.error) return fail(result.message);
+  if (result.error) {
+    data.error = '';
+    data.voiceMessage = 'No se agregó al total. ' + result.message;
+    render();
+    announce(data.voiceMessage);
+    return;
+  }
   data.voiceItems = result.items;
   data.voiceMessage = result.message;
   data.error = '';
@@ -1182,6 +1196,8 @@ function syncHash(replace = false) {
 }
 function go(screen, fromHash = false) {
   if (!pageNames.includes(screen)) return;
+  if(hasActiveSession(data) && ((screen==='access' && data.authMode!=='code')
+      || (screen==='registration' && data.intent!=='signup'))) screen='home';
   stopListening();
   stopSmsOtpListener();
   if (isProtectedRoute(screen) && !hasActiveSession(data)) {
@@ -1239,6 +1255,8 @@ function applyHashRoute(announceError = false) {
     hash = aliases[hash] || hash;
   }
   if (!pageNames.includes(hash)) return;
+  if(hasActiveSession(data) && ((hash==='access' && data.authMode!=='code')
+      || (hash==='registration' && data.intent!=='signup'))) hash='home';
   if (loaded) {
     go(hash, true);
     return;
@@ -1516,7 +1534,6 @@ app.addEventListener('click', async event => {
       stopListening();
       stopSmsOtpListener();
       await signOutSession(data);
-      clearDemoMovements();
       const { large, contrast } = data;
       data = { ...initialState(), screen: 'access', large, contrast };
       if (location.hash) history.replaceState(null, '', location.pathname + location.search);
@@ -1574,4 +1591,3 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     navigator.serviceWorker.register('./sw.js').catch(error => console.error('No se pudo registrar el service worker.', error));
   });
 }
-
