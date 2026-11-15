@@ -16,7 +16,7 @@ Aplicación web progresiva (PWA) de demostración para que pequeños comercios p
 
 ## Propósito e inclusión
 
-4Sigma CheckIn busca simplificar la preparación de cobros para personas comerciantes, en particular pequeños negocios que necesitan una experiencia clara y rápida en caja. La persona puede dictar un importe o los productos vendidos, revisar el total y, en la demo, generar un QR ilustrativo. La alternativa de calculadora permite introducir y corregir el importe sin usar voz.
+COBRAVOZ busca simplificar la preparación de cobros para personas comerciantes, en particular pequeños negocios que necesitan una experiencia clara y rápida en caja. La persona puede dictar un importe o los productos vendidos, revisar el total y, en la demo, generar un QR ilustrativo. La alternativa de calculadora permite introducir y corregir el importe sin usar voz.
 
 La interacción por voz permite describir la operación —por ejemplo, “dos cafés de cuarenta pesos”—, agregar o quitar conceptos, consultar el total y solicitar su revisión. El reconocimiento está limitado a las capacidades y permisos del navegador. La lectura de respuestas puede anunciar importes y detalles de movimientos mediante la síntesis de voz del navegador.
 
