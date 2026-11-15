@@ -76,12 +76,12 @@ export function createVoiceController({ host = globalThis, onState, onTranscript
       return false;
     }
     const recognition = current.recognition;
-    const finalize = () => {
+    const finalize = (abort = false) => {
       if(!isCurrent(current))return;
       const transcript=[...current.finals.entries()].sort(([left],[right])=>left-right)
         .map(([,v])=>v).join(' ').replace(/\s+/g,' ').trim();
       if(!transcript){fail(current,'no-speech');return;}
-      release(current);emit('ready');notify(onTranscript,transcript);
+      release(current,abort);emit('ready');notify(onTranscript,transcript);
     };
     try {
       recognition.lang = 'es-MX';
@@ -106,7 +106,7 @@ export function createVoiceController({ host = globalThis, onState, onTranscript
           current.finals.set(index, typeof transcript === 'string' ? transcript.trim() : '');
         }
         // Safari puede emitir un resultado final sin onend: no dejar el importe bloqueado.
-        if(current.finals.size&&!current.resultTimer)current.resultTimer=clock(()=>finalize(),1100);
+        if(current.finals.size&&!current.resultTimer)current.resultTimer=clock(()=>finalize(true),1100);
       };
       recognition.onerror = event => {
         if (!isCurrent(current)) return;

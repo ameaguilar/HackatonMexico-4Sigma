@@ -125,3 +125,6 @@ textarea.input,.large textarea.input{height:auto;min-height:110px;resize:vertica
 .contrast .cv-mic-button.listening{background:#FA6871;color:#001E19}
 .large .cv-mic-button strong{font-size:20px}
 @media(prefers-reduced-motion:reduce){.cv-mic-halo.recording::after{animation:none;border-width:4px}}
+
+/* Mantener una única barra de navegación para la caja, sin pestañas duplicadas. */
+.cv-work-nav:not([hidden]) + #app .charge-tabs{display:none}
