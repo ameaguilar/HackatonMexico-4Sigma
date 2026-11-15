@@ -1,8 +1,9 @@
 /* CobraVoz demo PWA: solo archivos estáticos, nunca cachear pagos reales ni respuestas de autenticación. */
-const CACHE="cobravoz-v11-1-jornada-voz-20261114";
+const CACHE="cobravoz-v12-registro-rescate-20261114";
 const ASSETS=[
   "./",
   "./index.html",
+  "./js/app-pack.js?v=cv-v12",
   "./manifest.webmanifest",
   "./ayuda.html",
   "./css/help.css?v=help-v2",
