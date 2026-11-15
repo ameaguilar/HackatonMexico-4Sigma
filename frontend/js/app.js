@@ -1,5 +1,5 @@
 import { money, evaluate, updateCalculation } from './payments.js';
-import { createVoiceController, speakText } from './voice.js?v=voice-1';
+import { createVoiceController, speakText } from './voice.js?v=voice-v11-1';
 import { processVoiceCommand } from './voice-commands.js';
 import { demoQrSvg } from './demo-qr.js';
 import { movementStatus, filterMovements, movementTotals, exampleMovements } from './movements.js';
