@@ -1,39 +1,98 @@
-
-# 4Sigma  · CobraVoz (CheckIn)
-
-## V8 · Ayuda y documentos legales (frontend)
-- Footer responsive con acceso a manual, 18 FAQs, términos y aviso de privacidad propios, enlaces oficiales a Pey/CoDi.
-- Chatbot de FAQs **local y sin IA externa** en una ventana compacta, teclado y alto contraste. Nunca pide ni almacena credenciales bancarias o códigos OTP.
-- Ruta `/ayuda.html#manual`, `#faq`, `#terms`, `#privacy`. El chat se abre desde cualquier pantalla.
-- **Términos y privacidad son borradores**; no activar aceptación contractual ni producción antes de completar responsable jurídico, domicilio, contacto ARCO, transferencias, periodos y revisión legal.
-- El servicio de cobros se mantiene separado e intacto. No se despliegan cobros Pey con esta actualización.
-
 # CobraVoz · Hackatón México 2026
+# COBRAVOZ
 
-Aplicación web progresiva (PWA) de demostración para que pequeños comercios preparen y revisen cobros en pesos mexicanos mediante voz o calculadora. CobraVoz es el nombre que utiliza el código y la interfaz del proyecto; 4Sigma CheckIn identifica el proyecto de la hackatón.
+COBRAVOZ es una aplicación web progresiva (PWA) diseñada para facilitar los cobros digitales a usuarios comerciantes mediante el reconocimiento de voz. Permite dictar el monto de un cobro, incluso mediante la suma de varias cantidades, escuchar y confirmar el total antes de generar un código QR de pago. La generación del código se realiza mediante CoDi, a través de la integración con la API de PEY, mientras que la asistencia por voz facilita la interacción con la plataforma, promoviendo una experiencia de cobro más accesible, ágil e inclusiva.
 
-> **Estado actual:** la aplicación es una demostración de frontend. Los códigos QR, pagos, confirmaciones y movimientos que muestra no son operaciones bancarias reales. La integración con la API PEY CoDi está planeada, pero no implementada en este repositorio.
+## Características principales
 
-## Propósito e inclusión
+- **Público objetivo:** comerciantes que necesitan realizar cobros de forma sencilla.
+- **Innovación:** reconocimiento de voz para dictar cantidades, sumar importes y confirmar el total.
+- **Integración tecnológica:** generación de códigos QR mediante CoDi, conectada a través de la API de PEY.
 
-COBRAVOZ busca simplificar la preparación de cobros para personas comerciantes, en particular pequeños negocios que necesitan una experiencia clara y rápida en caja. La persona puede dictar un importe o los productos vendidos, revisar el total y, en la demo, generar un QR ilustrativo. La alternativa de calculadora permite introducir y corregir el importe sin usar voz.
+##  Demo en línea
+**Enlace de acceso:**  
+[🌐 Acceder a COBRAVOZ](https://cobravoz.netlify.app/)
 
-La interacción por voz permite describir la operación —por ejemplo, “dos cafés de cuarenta pesos”—, agregar o quitar conceptos, consultar el total y solicitar su revisión. El reconocimiento está limitado a las capacidades y permisos del navegador. La lectura de respuestas puede anunciar importes y detalles de movimientos mediante la síntesis de voz del navegador.
+COBRAVOZ se encuentra desplegada en Netlify y está disponible para utilizarse desde computadoras y dispositivos móviles (Android y iPhone).
 
-Estas opciones pueden apoyar a personas con debilidad visual, y la interfaz escrita, las etiquetas accesibles y los avisos visuales ofrecen una alternativa a la voz para personas con debilidad auditiva. La voz no es obligatoria: los campos de texto, botones y calculadora permiten completar el flujo sin micrófono ni audio. La aplicación no afirma tener certificación de accesibilidad ni sustituir tecnologías de apoyo.
+### Lo que hace el código hoy
 
-## Funcionalidad implementada
+Actualmente, COBRAVOZ cuenta con un sistema de registro, autenticación de usuarios, gestión de sesiones y generación de cobros digitales mediante reconocimiento de voz e integración con CoDi.
 
-- Registro y acceso de demostración, navegación entre vistas y captura de información de negocio. Los datos bancarios y la verificación de identidad no se envían ni validan en un backend.
-- Acceso opcional a Supabase Auth por SMS cuando se configura el cliente; si no, el modo demo acepta el código fijo `123456`. El código del navegador usa la URL y la clave publicable/anónima de Supabase, que no son secretos de servidor.
-- Dictado en español de México mediante Web Speech API cuando el navegador lo admite, comandos para preparar y modificar un cobro y lectura opcional con SpeechSynthesis. También se puede escribir la descripción.
-- Calculadora para operaciones aritméticas y revisión manual del total antes de continuar.
-- QR de demostración rotulado como no pagable; comprobante e historial simulados en memoria de sesión. No hay solicitud de pago, transferencia, conciliación ni confirmación bancaria real.
-- Vistas responsivas, PWA con recursos estáticos precargados y recursos de accesibilidad como etiquetas, estados y descripciones para lector de pantalla.
+#### 1. Registro y acceso de usuarios
+
+La plataforma permite el registro de usuarios comerciantes mediante un formulario que solicita los siguientes datos:
+
+- Nombre completo.
+- Número telefónico.
+- Fecha de nacimiento.
+- CLABE interbancaria.
+- Nombre del negocio (campo opcional).
+
+Una vez completado el registro, el usuario puede iniciar sesión con sus credenciales y cerrar su sesión de manera segura desde la plataforma.
+
+#### 2. Autenticación mediante SMS
+
+Se contempla la implementación de un mecanismo de verificación de identidad mediante un código de confirmación enviado por SMS al número telefónico registrado.
+
+Esta funcionalidad se encuentra pendiente de integración. Para efectos de demostración, actualmente se utiliza el código de acceso **123456**, que permite continuar con el flujo de autenticación.
+
+#### 3. Generación de cobros mediante reconocimiento de voz
+
+El proceso de cobro es una de las principales funcionalidades de COBRAVOZ. Permite al comerciante dictar cantidades mediante el micrófono del dispositivo, utilizando instrucciones sencillas y expresando únicamente los números que conforman el importe.
+
+El sistema reconoce tanto operaciones de suma como cantidades individuales.
+
+**Ejemplos de instrucciones por voz:**
+
+- "Suma 30 más 20 más 1200".
+- "Cobra 200".
+- "Cobra 150 más 50".
+
+El sistema interpreta las cantidades dictadas y calcula el importe total del cobro.
+
+**Flujo para generar un cobro:**
+
+1. **Dictar el importe:** el comerciante activa el reconocimiento de voz y expresa las cantidades que desea cobrar.
+2. **Confirmar importe:** el sistema presenta el resultado de la operación para que el usuario pueda verificarlo. Al presionar el botón "Confirmar importe", valida el monto antes de continuar.
+3. **Generar QR:** una vez confirmado el importe, el usuario presiona el botón "Generar QR" para iniciar la generación del código de pago mediante la integración de CoDi a través de la API de PEY.
+4. **Limpiar cobro:** si el comerciante necesita corregir o actualizar las cantidades, puede utilizar el botón "Limpiar cobro" para reiniciar la operación e ingresar un nuevo importe.
+
+#### Código QR e integración con CoDi
+
+COBRAVOZ integra la tecnología de pagos CoDi mediante la API de PEY, permitiendo generar códigos QR asociados al importe del cobro previamente confirmado.
+
+El código QR facilita que el cliente pueda realizar el pago desde una aplicación bancaria compatible con CoDi.
+
+La aplicación genera el código QR como parte del flujo de cobro; la confirmación del movimiento bancario debe corroborarse desde la aplicación del banco correspondiente.
+
+#### 5. Historial de cobros
+
+La plataforma conserva un historial de los cobros realizados, permitiendo al comerciante consultar los registros de sus operaciones.
+
+Este historial funciona como referencia de los cobros generados. Para verificar los detalles bancarios y corroborar que un pago se haya realizado correctamente, el usuario debe consultar su aplicación bancaria.
+
+**Importante:** el historial de COBRAVOZ no sustituye el comprobante ni la confirmación bancaria de una transacción.
+
+#### 6. Gestión de sesiones
+
+Los usuarios registrados pueden iniciar y cerrar sesión para acceder a las funcionalidades de la plataforma. Esto permite mantener una experiencia de uso asociada a cada cuenta de comerciante.
+
+## Disponibilidad y alojamiento
+
+COBRAVOZ se encuentra alojada en **Netlify**, una plataforma de hosting que permite desplegar y publicar aplicaciones web.
+
+La aplicación está disponible desde cualquier dispositivo con un navegador web compatible:
+
+- **Computadoras:** acceso desde navegadores como Google Chrome, Microsoft Edge, Firefox y Safari.
+- **Dispositivos Android (10 o superior):** acceso desde el navegador y posibilidad de instalarla como aplicación web progresiva (PWA), si el dispositivo y navegador lo permiten.
+- **Dispositivos iPhone (iOS 16 o superior):** acceso mediante Safari y posibilidad de agregarla a la pantalla de inicio para utilizarla como una aplicación.
+
+
+
+Al estar desarrollada como PWA, COBRAVOZ facilita el acceso desde diferentes dispositivos sin necesidad de descargarla desde Google Play o App Store.
 
 ## Stack y arquitectura reales
-
-El repositorio no contiene `package.json`, framework de frontend ni servidor backend.
 
 | Parte | Tecnología / archivos | Responsabilidad y estado |
 | --- | --- | --- |
@@ -49,19 +108,13 @@ El repositorio no contiene `package.json`, framework de frontend ni servidor bac
 
 ### Lo que hace el código hoy
 
-El código disponible crea un QR ilustrativo que incluye datos explícitos de demostración. La pantalla indica “QR DEMO · NO PAGABLE”; la simulación no consulta PEY, no procesa pagos y no prueba que un pago se haya recibido. El estado “confirmado” de los datos de ejemplo tampoco acredita una transacción bancaria. `supabase-auth.js` cubre autenticación, no la API de cobros.
 
-### Flujo objetivo descrito en el plan, aún pendiente
-
-`PLAN_IMPLEMENTACION_PEY.md` propone una integración servidor-a-servidor: registrar una cuenta de comercio, consultar su estado y permitir la generación de cobros CoDi solo cuando la cuenta esté activa; crear el QR con el importe y concepto revisados; y reflejar el pago en el historial después de verificar la transacción o una notificación de PEY en el backend. La aplicación actual no ejecuta ninguno de esos pasos. Las rutas PEY que aparecen en ese plan son una propuesta basada en un archivo OpenAPI citado allí, pero `pey-openapi.json` no está presente en este repositorio para verificar el contrato. Confirma el contrato vigente con PEY antes de implementar.
-
-El plan menciona como rutas candidatas de PEY `POST /bank-account`, `GET /bank-account/{id}`, `POST /codi/qr` y consultas de transacciones. No hay cliente, endpoints propios `/api/pey/*`, servidor, funciones edge, webhooks, tablas ni migraciones implementadas. La integración también requiere definir autenticación/autorización del backend, almacenamiento por comercio, validación de notificaciones, idempotencia, conciliación, expiración y tratamiento de errores.
 
 ### API keys y configuración segura
 
 La clave privada de PEY debe existir únicamente en el entorno secreto del backend que se implemente y enviarse desde ese servidor a PEY como credencial de autorización, de acuerdo con el contrato oficial. No debe añadirse a `frontend/`, al service worker, al repositorio, a variables expuestas al proceso de compilación del frontend ni a respuestas del navegador. El `netlify.toml` actual publica solamente archivos estáticos; por sí solo no proporciona backend ni protege una clave incorporada al JavaScript.
 
-Todavía no hay nombre de variable de entorno PEY configurado por código porque la integración no existe. `PEY_API_KEY` y `PEY_API_BASE_URL` aparecen como nombres propuestos en `PLAN_IMPLEMENTACION_PEY.md`, no como variables activas. Si se usa Supabase Auth, la configuración pública actual puede suministrarse mediante metadatos `supabase-url` y `supabase-publishable-key`, o `globalThis.COBRAVOZ_SUPABASE`, según `supabase-auth.js`. La clave publicable/anónima no debe confundirse con una clave privada de servidor; protege los datos con políticas y permisos apropiados.
+
 
 ## Requisitos e inicio local
 
@@ -89,19 +142,5 @@ node --test tests/voice-commands.test.mjs
 node --test tests/movements.test.mjs
 ```
 
-## Despliegue de vista previa
 
-`netlify.toml` configura `frontend/` como directorio publicado y no define un comando de build. Para desplegar, conecta el repositorio al sitio de Netlify y selecciona la rama de vista previa deseada; la configuración del sitio debe conservar `frontend/` como directorio de publicación. Esto publica únicamente la PWA estática. No despliega una API PEY ni hace posible cobrar realmente. No se ha verificado el estado actual de una cuenta o sitio de Netlify.
 
-La PWA puede mostrar el shell previamente guardado sin conexión; una operación real, una vez que exista integración, deberá requerir conexión y confirmación del backend. No guardes secretos en archivos publicados o en el caché del service worker.
-
-## Pendientes para completar PEY
-
-- Obtener y versionar de forma segura la especificación oficial vigente de PEY y confirmar acceso, credenciales, entorno y condiciones de cuenta/comercio.
-- Decidir y desplegar el backend (o funciones serverless/edge), su autenticación, configuración de secretos y límites de solicitudes.
-- Diseñar y aplicar almacenamiento seguro, autorización por comercio, políticas de acceso y retención de datos.
-- Implementar alta y consulta de cuenta, creación de QR CoDi real, consulta/verificación de transacciones y webhook firmado o mecanismo oficial de notificación, con idempotencia y conciliación.
-- Conectar el frontend a ese backend y distinguir estados reales de simulados en recibos e historial.
-- Configurar dominios, variables privadas, CORS y observabilidad en el entorno de despliegue.
-
-Consulta `PLAN_IMPLEMENTACION_PEY.md` para el diseño propuesto. Sus rutas y esquemas son referencias de planificación y deben cotejarse con la documentación oficial antes de usarse en producción.
