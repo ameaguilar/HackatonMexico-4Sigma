@@ -80,3 +80,23 @@ test('el QR codifica solo texto de demostración e importe MXN', () => {
   assert.ok(demoQrSvg(999999.99).length > 1000);
   for (const value of [0, -1, 0.001, 1000000, NaN, Infinity, '', null]) assert.throws(() => demoQrSvg(value), RangeError);
 });
+
+
+test('cálculo aritmético natural y suma acumulativa sin requerir expresiones técnicas', () => {
+  let cart = processVoiceCommand('suma 20');
+  cart = processVoiceCommand('más 50', cart.items);
+  cart = processVoiceCommand('más 80', cart.items);
+  assert.equal(sum(cart), 15000);
+  for (const [phrase, cents] of [
+    ['suma 20, más 50, más 80', 15000], ['multiplica 3 por 25', 7500],
+    ['resta 150 menos 20', 13000], ['divide 100 entre 4', 2500],
+    ['dos cafés a 45', 9000]
+  ]) {
+    const result = processVoiceCommand(phrase);
+    assert.equal(result.error, false, phrase);
+    assert.equal(sum(result), cents, phrase);
+  }
+  const unchanged = processVoiceCommand('divide 100 entre 0', cart.items);
+  assert.equal(unchanged.error, true);
+  assert.equal(sum(unchanged), 15000);
+});

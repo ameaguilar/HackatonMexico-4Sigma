@@ -29,7 +29,7 @@ function parseProductCommand(text){
  const parts=normalized.split(/\s+y\s+(?=(?:\d+|un|una|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez)\s+)/);
  let additions=[];
  for(let part of parts){
-   const m=part.match(/^(\d+|un|una|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez)\s+([a-z\s]+?)\s+de\s+(.+?)(?:\s+pesos?)?$/);
+   const m=part.match(/^(\d+|un|una|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez)\s+([a-z\s]+?)\s+(?:de|a|por)\s+(.+?)(?:\s+pesos?)?$/);
    if(!m)return null;
    const qty=readSpanishNumber(m[1]);const unit=getAmountCents(m[3]);
    const name=m[2].trim().replace(/\s+/g,' ');
@@ -39,6 +39,36 @@ function parseProductCommand(text){
    additions.push({label:qty+' × '+name+' ('+formatMXN(unit/100)+' c/u)',cents:amount});
  }
  return additions.length?additions:null;
+}
+
+
+/* Calculadora hablada en centavos, sin eval ni conversiones de divisas. */
+function parseArithmeticCommand(text) {
+  let body = text.replace(/^(?:suma|sumar|agrega|agregar|anade|multiplica|multiplicar|divide|dividir|resta|restar|calcula|calcular|cobra|cobrar)\s+/, '')
+    .replace(/\s+(?:multiplicado|multiplicada)\s+por\s+/g,' por ')
+    .replace(/\s+(?:dividido|dividida)\s+(?:entre|por)\s+/g,' entre ');
+  const parts=body.split(/\s+(mas|menos|por|entre|\+)\s+/).map(p=>p.trim());
+  if(parts.length<3 || parts.length%2===0)return null;
+  const operators=parts.filter((_,i)=>i%2===1).map(x=>x==='+'?'mas':x);
+  const values=parts.filter((_,i)=>i%2===0).map(x=>{
+    if(/^0(?:[.]0{1,2})?(?:\s+(?:pesos?|mxn))?$/.test(x))return 0;
+    return getAmountCents(x);
+  });
+  if(values.some(x=>x===null))return null;
+  let nums=values.slice(),ops=operators.slice();
+  for(let i=0;i<ops.length;){
+    const op=ops[i];if(op!=='por' && op!=='entre'){i++;continue;}
+    if(op==='entre' && nums[i+1]===0)return {error:'No puedo dividir entre cero. Revisa la frase.'};
+    const value=op==='por'?Math.round(nums[i]*nums[i+1]/100)
+      :Math.round(nums[i]*100/nums[i+1]);
+    if(!Number.isSafeInteger(value))return {error:'El cálculo supera el límite permitido.'};
+    nums.splice(i,2,value);ops.splice(i,1);
+  }
+  let cents=nums[0];
+  for(let i=0;i<ops.length;i++)cents+=ops[i]==='mas'?nums[i+1]:-nums[i+1];
+  if(!Number.isSafeInteger(cents)||cents<=0||cents>MAX_CENTS)
+    return {error:'El resultado debe ser mayor a cero y menor a un millón de pesos mexicanos.'};
+  return {cents,pureAddition:operators.every(x=>x==='mas'),values,label:body};
 }
 
 // Cada respuesta incluye una copia nueva; los comandos nunca mutan la venta recibida.
@@ -77,6 +107,16 @@ export function processVoiceCommand(raw, items = []) {
     if (total(next) > MAX_CENTS) return answer('El total supera el máximo permitido.', current, true);
     return answer('Total ' + formatMXN(total(next) / 100) + ' pesos. Revisa antes de generar QR.', next);
   };
+  const arithmetic=parseArithmeticCommand(text);
+  if(arithmetic){
+    if(arithmetic.error)return answer(arithmetic.error,current,true);
+    const additions=arithmetic.pureAddition
+      ?arithmetic.values.map((cents,i)=>({label:i===0?'Importe inicial':'Importe adicional',cents}))
+      :[{label:'Cálculo: '+arithmetic.label,cents:arithmetic.cents}];
+    if(/^(?:cobra|cobrar)\s+/.test(text))
+      return answer('Preparé un cobro de '+formatMXN(arithmetic.cents/100)+' pesos. ¿Confirmas?',additions);
+    return append(additions);
+  }
   let match = text.match(/^(agrega|agregar|anade|suma|mas)\s+(.+)$/);
   if (match) {
     const products = parseProductCommand(match[2]);
