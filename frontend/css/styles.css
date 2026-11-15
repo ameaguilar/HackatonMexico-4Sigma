@@ -93,3 +93,38 @@ textarea.input,.large textarea.input{height:auto;min-height:110px;resize:vertica
 .large .movement-badge{font-size:16px}
 .contrast .movement-badge[data-status-label="Vencido"],.contrast .movement-badge[data-status-label="Sin pago"]{color:var(--red)}
 @media(max-width:375px){.movement-item{padding:13px;flex-wrap:wrap}.movement-end{max-width:100%;flex-direction:row;align-items:center}.large .movement-summary{grid-template-columns:minmax(0,1fr)}}
+
+
+/* Navegación de la jornada: exactamente tres accesos en una sola fila. */
+.cv-work-nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;align-items:stretch;max-width:100%;width:100%;margin:0 0 18px;padding:4px;border:1px solid var(--stroke);border-radius:15px;background:var(--mint)}
+.cv-work-nav[hidden]{display:none!important}
+.cv-work-nav button{display:flex;align-items:center;justify-content:center;min-width:0;width:100%;min-height:47px;padding:9px 3px;border-radius:10px;border:1.5px solid transparent;background:var(--white);color:var(--green-dark);font-size:clamp(10px,2.9vw,13px);font-weight:800;line-height:1.2;letter-spacing:-.025em;white-space:nowrap}
+.cv-work-nav button[aria-pressed=true]{background:var(--green);color:#fff;border-color:var(--green);box-shadow:0 3px 10px #005a3631}
+.contrast .cv-work-nav button[aria-pressed=false]{background:#12483F;color:#fff;border-color:#92B7A3}
+.contrast .cv-work-nav button[aria-pressed=true]{background:#FFE39A;color:#002F2A}
+@media(max-width:375px){.cv-work-nav{gap:3px;padding:3px}.cv-work-nav button{font-size:10px;padding:8px 2px;min-height:46px}}
+/* SMS de seis dígitos sin encimarse en pantallas estrechas. */
+#code.input.code{width:100%;max-width:100%;min-width:0;padding:10px 5px;text-align:center;font-size:clamp(21px,7vw,31px);letter-spacing:clamp(1.6px,.32vw,4px);font-variant-numeric:tabular-nums;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:800;white-space:nowrap}
+@media(max-width:375px){#code.input.code{font-size:23px;letter-spacing:2px;padding-inline:3px}}
+/* Micrófono glass: verde = activar, rojo animado = grabando. */
+.cv-mic-halo{position:relative;width:156px;height:156px;margin:24px auto 16px;background:radial-gradient(circle at 28% 20%,#fff 0%,#DCEFE3 90%);border:2px solid #A4C2AE;box-shadow:inset 0 2px 8px #ffffff,0 6px 20px #084F2D1C}
+.cv-mic-halo::after{content:"";position:absolute;inset:3px;border-radius:50%;border:2px solid transparent;pointer-events:none}
+.cv-mic-button{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;width:121px;height:121px;border:3px solid #DCF5E3;outline:2px solid #07563A;background:linear-gradient(148deg,#168755 0%,#006341 52%,#00462D 100%);box-shadow:inset 0 3px 6px #ffffff48,0 9px 22px #002F1B42;color:white;font-size:24px;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.cv-mic-button svg{width:38px;height:38px;display:block;flex-shrink:0}
+.cv-mic-button strong{font-size:17px;line-height:1.2;font-weight:800;letter-spacing:-.02em}
+.cv-mic-button .cv-record-symbol{display:none}
+.cv-mic-button.listening{background:linear-gradient(145deg,#DF5262 0%,#B32635 50%,#8F1C2B 100%);border-color:#F8D6DC;outline-color:#B32635;box-shadow:inset 0 3px 6px #ffffff40,0 7px 25px #B3263560}
+.cv-mic-button.listening .cv-mic-symbol{display:none}
+.cv-mic-button.listening .cv-record-symbol{display:block}
+.cv-mic-halo.recording::after{border-color:#B32635;animation:cv-record-pulse 1.5s ease-out infinite}
+.cv-mic-button.requesting,.cv-mic-button.processing{background:linear-gradient(145deg,#B68B36,#88601D);outline-color:#9B742B;border-color:#F7E0A9}
+.cv-mic-button.requesting .cv-record-symbol,.cv-mic-button.processing .cv-record-symbol{display:block}
+.cv-mic-button.requesting .cv-mic-symbol,.cv-mic-button.processing .cv-mic-symbol{display:none}
+@keyframes cv-record-pulse{0%{transform:scale(.86);opacity:1}100%{transform:scale(1.15);opacity:0}}
+.contrast .cv-mic-button{background:#FFE39A;color:#002F2A;outline-color:#FFE39A}
+.contrast .cv-mic-button.listening{background:#FA6871;color:#001E19}
+.large .cv-mic-button strong{font-size:20px}
+@media(prefers-reduced-motion:reduce){.cv-mic-halo.recording::after{animation:none;border-width:4px}}
+
+/* Mantener una única barra de navegación para la caja, sin pestañas duplicadas. */
+.cv-work-nav:not([hidden]) + #app .charge-tabs{display:none}

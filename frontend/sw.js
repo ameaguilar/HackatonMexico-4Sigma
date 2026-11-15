@@ -1,17 +1,18 @@
 /* CobraVoz demo PWA: solo archivos estáticos, nunca cachear pagos reales ni respuestas de autenticación. */
-const CACHE="cobravoz-ayuda-v8-1-20261114";
+const CACHE="cobravoz-v12-registro-rescate-20261114";
 const ASSETS=[
   "./",
   "./index.html",
+  "./js/app-pack.js?v=cv-v12",
   "./manifest.webmanifest",
   "./ayuda.html",
   "./css/help.css?v=help-v2",
   "./js/help-widget.js?v=help-v2",
   "./icons/cobravoz.svg",
   "./css/bootstrap.min.css",
-  "./css/styles.css?v=merged-1",
-  "./js/app.js?v=merged-1",
-  "./js/voice.js?v=voice-1",
+  "./css/styles.css?v=merged-v11-1",
+  "./js/app.js?v=merged-v11-1",
+  "./js/voice.js?v=voice-v11-1",
   "./js/payments.js",
   "./js/voice-commands.js",
   "./js/demo-qr.js",

@@ -11,11 +11,14 @@ const messages = {
   'constructor-failed': 'No fue posible preparar el micrófono. Puedes escribir el cobro.',
   'start-failed': 'No fue posible iniciar el dictado. Revisa el micrófono o escribe el cobro.',
   'stop-failed': 'No fue posible terminar el dictado. Intenta otra vez o escribe el cobro.',
-  'recognition-failed': 'No fue posible captar la voz. Puedes escribir el cobro para continuar.'
+  'recognition-failed': 'No fue posible captar la voz. Puedes escribir el cobro para continuar.',
+  timeout: 'El micrófono no respondió. Intenta de nuevo o usa el dictado del teclado.'
 };
 
 export function createVoiceController({ host = globalThis, onState, onTranscript, onError } = {}) {
   let session = null;
+  const clock = host.setTimeout?.bind(host) || setTimeout;
+  const stopClock = host.clearTimeout?.bind(host) || clearTimeout;
   const notify = (callback, ...args) => {
     try { callback?.(...args); } catch { /* El estado del micrófono siempre debe liberarse. */ }
   };
@@ -24,6 +27,8 @@ export function createVoiceController({ host = globalThis, onState, onTranscript
 
   function release(current, abort = false) {
     current.settled = true;
+    if(current.timeout)stopClock(current.timeout);
+    if(current.resultTimer)stopClock(current.resultTimer);
     if (session === current) session = null;
     const recognition = current.recognition;
     if (!recognition) return;
@@ -62,7 +67,7 @@ export function createVoiceController({ host = globalThis, onState, onTranscript
       return false;
     }
 
-    const current = { recognition: null, finals: new Map(), processing: false, settled: false };
+    const current = { recognition: null, finals: new Map(), processing: false, settled: false, timeout: null, resultTimer: null };
     session = current;
     emit('requesting');
     if (!isCurrent(current)) return false;
@@ -71,13 +76,24 @@ export function createVoiceController({ host = globalThis, onState, onTranscript
       return false;
     }
     const recognition = current.recognition;
+    const finalize = (abort = false) => {
+      if(!isCurrent(current))return;
+      const transcript=[...current.finals.entries()].sort(([left],[right])=>left-right)
+        .map(([,v])=>v).join(' ').replace(/\s+/g,' ').trim();
+      if(!transcript){fail(current,'no-speech');return;}
+      release(current,abort);emit('ready');notify(onTranscript,transcript);
+    };
     try {
       recognition.lang = 'es-MX';
       recognition.continuous = false;
       recognition.interimResults = false;
       recognition.maxAlternatives = 1;
       recognition.onstart = () => {
-        if (isCurrent(current) && !current.processing) emit('listening');
+        if(isCurrent(current) && !current.processing){
+          emit('listening');
+          if(current.timeout)stopClock(current.timeout);
+          current.timeout=clock(()=>fail(current,'timeout'),30000);
+        }
       };
       recognition.onresult = event => {
         if (!isCurrent(current)) return;
@@ -89,6 +105,8 @@ export function createVoiceController({ host = globalThis, onState, onTranscript
           const transcript = result[0]?.transcript;
           current.finals.set(index, typeof transcript === 'string' ? transcript.trim() : '');
         }
+        // Safari puede emitir un resultado final sin onend: no dejar el importe bloqueado.
+        if(current.finals.size&&!current.resultTimer)current.resultTimer=clock(()=>finalize(true),1100);
       };
       recognition.onerror = event => {
         if (!isCurrent(current)) return;
@@ -96,16 +114,9 @@ export function createVoiceController({ host = globalThis, onState, onTranscript
         fail(current, code);
       };
       recognition.onnomatch = () => fail(current, 'no-speech');
-      recognition.onend = () => {
-        if (!isCurrent(current)) return;
-        const transcript = [...current.finals.entries()].sort(([left], [right]) => left - right)
-          .map(([, value]) => value).join(' ').replace(/\s+/g, ' ').trim();
-        if (!transcript) { fail(current, 'no-speech'); return; }
-        release(current);
-        emit('ready');
-        notify(onTranscript, transcript);
-      };
+      recognition.onend = () => { if(isCurrent(current))finalize(); };
       recognition.start();
+      current.timeout=clock(()=>fail(current,'timeout'),15000);
       return true;
     } catch {
       fail(current, 'start-failed');
