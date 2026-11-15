@@ -4,7 +4,7 @@ export const PROTECTED_ROUTES = new Set(['home', 'charge', 'payment', 'history']
 export const PUBLIC_ROUTES = new Set(['access', 'registration']);
 
 const SESSION_STORAGE_KEY = 'cobravoz.auth.session';
-const DEFAULT_SESSION_TTL_MS = 8 * 60 * 60 * 1000;
+const DEFAULT_SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // Demo: caja de jornada con cierre explícito.
 
 let otpAbortController = null;
 
@@ -40,45 +40,35 @@ function toE164Mexico(phone) {
   return null;
 }
 
-function readStorageSession() {
-  if (typeof sessionStorage === 'undefined') return null;
-  try {
-    const raw = sessionStorage.getItem(SESSION_STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (!parsed || typeof parsed !== 'object') return null;
-    if (parsed.expiresAt && Number(parsed.expiresAt) <= Date.now()) {
-      sessionStorage.removeItem(SESSION_STORAGE_KEY);
-      return null;
-    }
-    return parsed;
-  } catch {
-    return null;
-  }
+function sessionStores(){
+  return [typeof localStorage!=='undefined'?localStorage:null,
+    typeof sessionStorage!=='undefined'?sessionStorage:null].filter(Boolean);
 }
-
-function writeStorageSession(session) {
-  if (typeof sessionStorage === 'undefined') return;
-  try {
-    sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
-  } catch {
-    // Ignorar fallos de almacenamiento en contextos restringidos.
+function readStorageSession(){
+  for(const store of sessionStores()){
+    try {
+      const raw=store.getItem(SESSION_STORAGE_KEY);if(!raw)continue;
+      const parsed=JSON.parse(raw);if(!parsed||typeof parsed!=='object')continue;
+      const expired=parsed.expiresAt&&Number(parsed.expiresAt)<=Date.now();
+      if(expired&&!(parsed.mode==='supabase'&&parsed.refreshToken)){
+        store.removeItem(SESSION_STORAGE_KEY);continue;
+      }
+      return parsed;
+    }catch{}
   }
+  return null;
 }
-
-function clearStorageSession() {
-  if (typeof sessionStorage === 'undefined') return;
-  try {
-    sessionStorage.removeItem(SESSION_STORAGE_KEY);
-  } catch {
-    // Ignorar fallos de almacenamiento en contextos restringidos.
-  }
+function writeStorageSession(session){
+  for(const store of sessionStores()){try{store.setItem(SESSION_STORAGE_KEY,JSON.stringify(session));}catch{}}
+}
+function clearStorageSession(){
+  for(const store of sessionStores()){try{store.removeItem(SESSION_STORAGE_KEY);}catch{}}
 }
 
 export function hasActiveSession(state) {
   if (!state?.authenticated || !state?.authSession) return false;
   const expiresAt = Number(state.authSession.expiresAt || 0);
-  if (expiresAt > 0 && expiresAt <= Date.now()) return false;
+  if (expiresAt > 0 && expiresAt <= Date.now()) return state.authSession.mode === 'supabase' && Boolean(state.authSession.refreshToken);
   return true;
 }
 
@@ -123,6 +113,43 @@ export function establishSession(state, sessionInfo = {}) {
   }
   writeStorageSession(session);
   return session;
+}
+
+
+let pendingRefresh=null;
+/* Supabase: renovamos el access token con un refresh token rotativo, sin SMS entre ventas.
+   El servidor conserva la autoridad sobre sesiones revocadas y pagos reales. */
+export function refreshSessionIfNeeded(state){
+  const current=state?.authSession;
+  if(!current||!state?.authenticated)return Promise.resolve(false);
+  if(current.mode!=='supabase')return Promise.resolve(hasActiveSession(state));
+  if(Number(current.expiresAt||0)>Date.now()+120000)return Promise.resolve(true);
+  if(pendingRefresh)return pendingRefresh;
+  const config=getSupabaseConfig();
+  if(!config.configured||!current.refreshToken||typeof fetch!=='function')return Promise.resolve(false);
+  pendingRefresh=(async()=>{
+    try{
+      const resp=await fetch(config.url+'/auth/v1/token?grant_type=refresh_token',{
+        method:'POST',
+        headers:{'Content-Type':'application/json',apikey:config.publishableKey},
+        body:JSON.stringify({refresh_token:current.refreshToken})
+      });
+      const p=await resp.json().catch(()=>({}));
+      if(state.authSession!==current)return false;
+      if(resp.ok&&p.access_token&&p.refresh_token){
+        const seconds=Number(p.expires_in||3600);
+        state.authSession={...current,accessToken:p.access_token,refreshToken:p.refresh_token,
+          expiresAt:Date.now()+Math.max(60,seconds)*1000};
+        writeStorageSession(state.authSession);
+        return true;
+      }
+      if([400,401,403].includes(resp.status)){
+        clearStorageSession();state.authenticated=false;state.authSession=null;
+      }
+    }catch{/* Sin conexión: reintentar al volver a primer plano. */}
+    return false;
+  })().finally(()=>{pendingRefresh=null});
+  return pendingRefresh;
 }
 
 export async function signOutSession(state) {
