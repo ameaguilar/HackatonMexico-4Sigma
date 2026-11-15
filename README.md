@@ -1,5 +1,4 @@
 # CobraVoz · Hackatón México 2026
-# COBRAVOZ
 
 COBRAVOZ es una aplicación web progresiva (PWA) diseñada para facilitar los cobros digitales a usuarios comerciantes mediante el reconocimiento de voz. Permite dictar el monto de un cobro, incluso mediante la suma de varias cantidades, escuchar y confirmar el total antes de generar un código QR de pago. La generación del código se realiza mediante CoDi, a través de la integración con la API de PEY, mientras que la asistencia por voz facilita la interacción con la plataforma, promoviendo una experiencia de cobro más accesible, ágil e inclusiva.
 
@@ -58,7 +57,7 @@ El sistema interpreta las cantidades dictadas y calcula el importe total del cob
 3. **Generar QR:** una vez confirmado el importe, el usuario presiona el botón "Generar QR" para iniciar la generación del código de pago mediante la integración de CoDi a través de la API de PEY.
 4. **Limpiar cobro:** si el comerciante necesita corregir o actualizar las cantidades, puede utilizar el botón "Limpiar cobro" para reiniciar la operación e ingresar un nuevo importe.
 
-#### Código QR e integración con CoDi
+#### 4. Código QR e integración con CoDi
 
 COBRAVOZ integra la tecnología de pagos CoDi mediante la API de PEY, permitiendo generar códigos QR asociados al importe del cobro previamente confirmado.
 
@@ -104,15 +103,9 @@ Al estar desarrollada como PWA, COBRAVOZ facilita el acceso desde diferentes dis
 | Publicación de vista previa | Netlify, `netlify.toml` | Publica `frontend/` como sitio estático, sin comando de compilación. No despliega un backend. |
 | Pruebas existentes | Node.js integrado, `node:test` | Pruebas de voz, comandos y movimientos en `tests/`. No hay scripts npm definidos. |
 
-## PEY CoDi: estado, flujo y requisitos
-
-### Lo que hace el código hoy
-
-
-
 ### API keys y configuración segura
 
-La clave privada de PEY debe existir únicamente en el entorno secreto del backend que se implemente y enviarse desde ese servidor a PEY como credencial de autorización, de acuerdo con el contrato oficial. No debe añadirse a `frontend/`, al service worker, al repositorio, a variables expuestas al proceso de compilación del frontend ni a respuestas del navegador. El `netlify.toml` actual publica solamente archivos estáticos; por sí solo no proporciona backend ni protege una clave incorporada al JavaScript.
+La clave privada de PEY existe únicamente en el entorno secreto del backend que se envía desde ese servidor a PEY como credencial de autorización, de acuerdo con el contrato oficial. No se añade a `frontend/`, al service worker, al repositorio, a variables expuestas al proceso de compilación del frontend ni a respuestas del navegador. El `netlify.toml` actual publica solamente archivos estáticos; por sí solo no proporciona backend ni protege una clave incorporada al JavaScript.
 
 
 
