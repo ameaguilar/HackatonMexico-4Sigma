@@ -6,10 +6,10 @@
     <div {{captureHidden}}>
       <div class="choice charge-tabs" role="group" aria-label="Forma de calcular el cobro"><button type="button" data-mode="voice" aria-pressed="{{voiceActive}}">Con voz</button><button type="button" data-mode="calculator" aria-pressed="{{calculatorActive}}">Calculadora</button></div>
       <div {{voiceHidden}}>
-        <div class="mic-halo"><button class="mic-core {{listeningClass}}" type="button" data-action="listen" aria-label="{{micLabel}}" aria-pressed="{{listening}}">🎙</button></div>
+        <div class="mic-halo cv-mic-halo"><button class="mic-core cv-mic-button {{listeningClass}}" type="button" data-action="listen" aria-label="{{micLabel}}" aria-pressed="{{listening}}"><svg class="cv-mic-symbol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5M8 22h8"/></svg><svg class="cv-record-symbol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="12" r="9"/><rect x="8.3" y="8.3" width="7.4" height="7.4" rx="1.2" fill="currentColor" stroke="none"/></svg><strong class="cv-mic-button-label">{{micButtonText}}</strong></button></div>
         <p class="speech-label">{{speechLabel}}</p>
         <p class="mini-note" {{lastTranscriptHidden}}>Último dictado: {{lastTranscript}}</p>
-        <p class="speech-hint">Puedes decir: “Cobra 85 pesos” o “Dos cafés de 45 y tres panes de 30”.</p>
+        <p class="speech-hint">Puedes decir: “suma 20, más 50, más 80” o “dos cafés de 45 y tres panes de 30”.</p>
         <button class="link-btn" type="button" data-action="voiceReadToggle" aria-pressed="{{voiceReadAloud}}">Lectura de respuestas: {{voiceReadLabel}}</button>
         <div class="field"><label for="spoken">¿Qué vendiste? También puedes escribirlo</label><textarea class="input" id="spoken" placeholder="Ej. Cobra 85 pesos" spellcheck="true">{{voiceText}}</textarea></div>
         <button class="secondary" type="button" data-action="interpret">Interpretar frase</button>

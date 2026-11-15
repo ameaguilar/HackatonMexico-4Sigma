@@ -7,6 +7,7 @@ import {
   isProtectedRoute,
   hasActiveSession,
   restoreSession,
+  refreshSessionIfNeeded,
   establishSession,
   signOutSession,
   requestPhoneOtp,
@@ -28,7 +29,7 @@ const initialState = () => ({
   fullName: '', businessName: '', dob: '', phone: '', email: '', entity: 'person', holder: '', clabe: '', rfc: '',
   consent: false, code: '', verified: false, phoneRawProblem: false, showClabe: false,
   error: '', large: false, contrast: false, chargeMode: 'voice', source: 'voice',
-  voiceText: '', voiceLastTranscript: '', listening: false, voiceReadAloud: false, calculation: '0', amount: 0, amountInput: '',
+  voiceText: '', voiceLastTranscript: '', listening: false, voiceStatus: 'ready', voiceReadAloud: false, calculation: '0', amount: 0, amountInput: '',
   voiceItems: [], voiceMessage: '', description: '', payment: null, history: [], lastId: 0,
   historyFilter: 'all', historyQuery: '', selectedMovementRef: '', historyDemoExamples: true
 });
@@ -37,8 +38,9 @@ let loaded = false;
 let lastRoutedHash = '';
 const voiceInput = createVoiceController({
   onState(status) {
+    data.voiceStatus = status;
     data.listening = ['requesting', 'listening', 'processing'].includes(status);
-    if (data.screen === 'charge' && data.chargeMode === 'voice') render();
+    if (data.screen === 'charge' && data.chargeMode === 'voice') paintVoiceState();
   },
   onTranscript(text) {
     if (data.screen !== 'charge' || data.chargeMode !== 'voice') return;
@@ -50,6 +52,7 @@ const voiceInput = createVoiceController({
   },
   onError(message) {
     data.listening = false;
+    data.voiceStatus='error';
     if (data.screen === 'charge' && data.chargeMode === 'voice') fail(message);
   }
 });
@@ -191,8 +194,8 @@ const screens = {
       captureHidden: hiddenUnless(!confirming), confirmationHidden: hiddenUnless(confirming),
       voiceHidden: hiddenUnless(mode === 'voice'), calculatorHidden: hiddenUnless(mode === 'calculator'),
       voiceActive: mode === 'voice', calculatorActive: mode === 'calculator', listening: data.listening,
-      listeningClass: data.listening ? 'listening' : '', micLabel: data.listening ? 'Detener dictado' : 'Iniciar dictado de voz',
-      speechLabel: data.listening ? 'Te escucho…' : 'Toca el micrófono para hablar', voiceText: data.voiceText,
+      listeningClass: data.voiceStatus==='listening'?'listening':data.voiceStatus==='requesting'?'requesting':data.voiceStatus==='processing'?'processing':'ready', micLabel: data.listening ? 'Detener dictado' : 'Activar micrófono', micButtonText:data.voiceStatus==='listening'?'Grabando':data.voiceStatus==='requesting'?'Activando':data.voiceStatus==='processing'?'Procesando':'Hablar',
+      speechLabel: data.voiceStatus==='listening'?'Te escucho…':data.voiceStatus==='requesting'?'Activando micrófono…':data.voiceStatus==='processing'?'Calculando…':'Toca el botón verde para hablar', voiceText: data.voiceText,
       voiceReadAloud: data.voiceReadAloud, voiceReadLabel: data.voiceReadAloud ? 'activada' : 'desactivada',
       lastTranscript: data.voiceLastTranscript, lastTranscriptHidden: hiddenUnless(Boolean(data.voiceLastTranscript)),
       voiceMessage: data.voiceMessage, voiceTotal: money(voiceTotal()),
@@ -229,6 +232,46 @@ const screens = {
   }
 };
 
+
+const DEMO_MOVEMENTS_KEY='cobravoz.demo.movements.v1';
+function restoreDemoMovements(){
+  if(!hasActiveSession(data)||data.authSession?.mode!=='demo')return;
+  try{
+    const p=JSON.parse(localStorage.getItem(DEMO_MOVEMENTS_KEY)||'null');
+    if(!p||p.owner!==data.authSession.phone||!Array.isArray(p.items))return;
+    const list=p.items.filter(x=>x&&typeof x.reference==='string'&&x.reference.length<100&&
+      Number.isFinite(x.amount)&&x.amount>0&&x.amount<=999999.99&&
+      ['pending','confirmed','expired','failed'].includes(x.status)&&
+      ['voice','calculator'].includes(x.method)).slice(0,500);
+    data.history=list;data.historyDemoExamples=list.length===0;
+    data.lastId=Math.max(0,Number(p.lastId)||0,...list.map(x=>Number(x.id)||0));
+  }catch{}
+}
+function persistDemoMovements(){
+  if(data.authSession?.mode!=='demo')return;
+  try{localStorage.setItem(DEMO_MOVEMENTS_KEY,JSON.stringify({
+    owner:data.authSession.phone,lastId:data.lastId,items:data.history.slice(0,500)
+  }));}catch{}
+}
+function clearDemoMovements(){try{localStorage.removeItem(DEMO_MOVEMENTS_KEY);}catch{}}
+function resetNextSale(mode='voice'){
+  stopListening();
+  data.voiceItems=[];data.voiceText='';data.voiceLastTranscript='';data.voiceMessage='';
+  data.calculation='0';data.amount=0;data.amountInput='';data.description='';data.payment=null;
+  data.chargeMode=mode;data.error='';
+  go('charge');
+}
+function keepSessionFresh(){
+  if(data.authSession?.mode!=='supabase')return;
+  refreshSessionIfNeeded(data).then(ok=>{
+    if(!ok&&!hasActiveSession(data)&&loaded){
+      data.authMode='phone';
+      go('access');
+      fail('Tu sesión venció o fue revocada. Vuelve a entrar para proteger tus cobros.');
+    }
+  }).catch(()=>{});
+}
+
 function merchantName() { return data.businessName.trim() || 'Negocio de demostración'; }
 function displayDate(value) { return value ? new Date(value).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' }) : 'Pendiente'; }
 function movementRecords() { return data.historyDemoExamples ? exampleMovements() : data.history; }
@@ -254,14 +297,39 @@ function handleVoicePhrase(text) {
   if (data.voiceReadAloud && !result.confirm) say(result.message);
 }
 
+
+/* Los estados del micrófono se pintan sin reconstruir el botón: evita cortes en Safari. */
+function paintVoiceState() {
+  const mic=app.querySelector('[data-action="listen"]');
+  if(!mic)return;
+  const status=data.voiceStatus||'ready';
+  for(const value of ['listening','requesting','processing','ready'])mic.classList.toggle(value,value===status);
+  mic.setAttribute('aria-pressed',String(data.listening));
+  mic.setAttribute('aria-label',data.listening?'Detener dictado':'Activar micrófono');
+  const label=mic.querySelector('.cv-mic-button-label');
+  if(label)label.textContent=status==='listening'?'Grabando':status==='requesting'?'Activando':status==='processing'?'Procesando':'Hablar';
+  mic.closest('.mic-halo')?.classList.toggle('recording',status==='listening');
+  const speech=app.querySelector('.speech-label');
+  if(speech)speech.textContent=status==='listening'?'Te escucho…':status==='requesting'?'Activando micrófono…':status==='processing'?'Calculando…':'Toca el botón verde para hablar';
+}
+
 function render(focus = false) {
   if (!loaded) return;
   const focusedKey = document.activeElement?.dataset.key;
   app.innerHTML = screens[data.screen]();
   shell.classList.toggle('large', data.large);
   shell.classList.toggle('contrast', data.contrast);
+  paintVoiceState();
   $('largeBtn').setAttribute('aria-pressed', String(data.large));
   $('contrastBtn').setAttribute('aria-pressed', String(data.contrast));
+  const nav=$('workNav');
+  if(nav){
+    nav.hidden=!hasActiveSession(data)||!['charge','history','payment'].includes(data.screen);
+    const active=data.screen==='history'?'history'
+      :data.screen==='charge'&&data.chargeMode==='voice'?'voice'
+      :data.screen==='charge'&&data.chargeMode==='calculator'?'calculator':'';
+    nav.querySelectorAll('[data-work-nav]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.workNav===active)));
+  }
   const smsActive = (data.screen === 'access' && data.authMode === 'code') || (data.screen === 'registration' && data.registrationStep === 'code');
   if (smsActive) {
     startSmsOtpListener(app.querySelector('#smsForm'), app.querySelector('#code'));
@@ -281,6 +349,7 @@ function render(focus = false) {
 function stopListening() {
   voiceInput.cancel();
   data.listening = false;
+  data.voiceStatus='ready';
 }
 function syncHash(replace = false) {
   const routes = {
@@ -484,6 +553,7 @@ app.addEventListener('submit', async event => {
         fullName: data.fullName
       });
       data.code = '';
+      restoreDemoMovements();
       if (data.intent === 'signup') {
         registrationStep('bank');
       } else {
@@ -507,12 +577,7 @@ app.addEventListener('click', async event => {
   }
   if (button.dataset.movementRef) { data.selectedMovementRef = button.dataset.movementRef; go('history'); return; }
   if (button.dataset.historyFilter) { data.historyFilter = button.dataset.historyFilter; render(); return; }
-  if (button.dataset.charge) {
-    data.chargeMode = button.dataset.charge;
-    data.voiceText = ''; data.voiceLastTranscript = ''; data.voiceItems = []; data.voiceMessage = '';
-    data.calculation = '0'; data.amountInput = ''; data.amount = 0; data.description = '';
-    go('charge'); return;
-  }
+  if (button.dataset.charge) { resetNextSale(button.dataset.charge); return; }
   if (button.dataset.mode) { setChargeMode(button.dataset.mode); return; }
   if (button.dataset.entity) { data.entity = button.dataset.entity; render(); return; }
   if (button.dataset.key) {
@@ -528,6 +593,7 @@ app.addEventListener('click', async event => {
     case 'signup': data.intent = 'signup'; registrationStep('identity'); break;
     case 'demoLogin': {
       establishSession(data, { mode: 'demo', source: 'demo-login', phone: data.phone });
+      restoreDemoMovements();
       const target = data.redirectAfterAuth || 'home';
       data.redirectAfterAuth = null;
       go(target);
@@ -570,6 +636,7 @@ app.addEventListener('click', async event => {
     case 'simulateRequest': if (checkBank()) registrationStep('ready'); break;
     case 'demoPasskey': {
       establishSession(data, { mode: 'demo', source: 'demo-passkey', phone: data.phone, fullName: data.fullName, businessName: data.businessName });
+      restoreDemoMovements();
       const target = data.redirectAfterAuth || 'home';
       data.redirectAfterAuth = null;
       go(target);
@@ -608,16 +675,19 @@ app.addEventListener('click', async event => {
       };
       data.historyDemoExamples = false;
       data.history.unshift(data.payment);
+      persistDemoMovements();
       go('payment'); announce('QR ilustrativo generado. No es válido para pagar.'); break;
     case 'editAmount': data.chargeMode = 'review'; go('charge'); break;
     case 'simulatePaid':
       if (!data.payment || data.payment.status !== 'pending') return;
       data.payment.status = 'confirmed';
       data.payment.confirmedAt = new Date().toISOString();
+      persistDemoMovements();
       syncHash();
       render(true); announce('Pago simulado. No se realizó una transferencia real.');
       if (data.voiceReadAloud) say('Pagaste ' + data.payment.amount + ' pesos mexicanos en ' + data.payment.businessName + '. Pago simulado.');
       break;
+    case 'nextSale': resetNextSale('voice'); break;
     case 'backToMovements': data.selectedMovementRef = ''; go('history'); break;
     case 'readMovement': {
       const movement = movementRecords().find(record => record.reference === data.selectedMovementRef);
@@ -628,6 +698,7 @@ app.addEventListener('click', async event => {
       stopListening();
       stopSmsOtpListener();
       await signOutSession(data);
+      clearDemoMovements();
       const { large, contrast } = data;
       data = { ...initialState(), screen: 'access', large, contrast };
       if (location.hash) history.replaceState(null, '', location.pathname + location.search);
@@ -636,6 +707,17 @@ app.addEventListener('click', async event => {
     }
   }
 });
+
+$('workNav')?.addEventListener('click',event=>{
+  const button=event.target.closest('[data-work-nav]');
+  if(!button||!hasActiveSession(data))return;
+  const screen=button.dataset.workNav;
+  if(screen==='history'){data.selectedMovementRef='';go('history');return;}
+  if(screen==='voice'||screen==='calculator'){
+    stopListening();data.chargeMode=screen;go('charge');
+  }
+});
+
 $('largeBtn').addEventListener('click', () => { data.large = !data.large; render(); });
 $('contrastBtn').addEventListener('click', () => { data.contrast = !data.contrast; render(); });
 $('voiceBtn').addEventListener('click', () => {
@@ -653,6 +735,11 @@ window.addEventListener('pagehide', () => {
   stopSmsOtpListener();
 });
 restoreSession(data);
+restoreDemoMovements();
+keepSessionFresh();
+window.addEventListener('pageshow',keepSessionFresh);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)keepSessionFresh();});
+window.setInterval(keepSessionFresh,60000);
 applyHashRoute(false);
 loadViews().then(() => {
   loaded = true;
